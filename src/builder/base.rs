@@ -51,9 +51,9 @@ pub fn render_article(body: &str, metadata: Option<PageMetadata>) -> String {
     if let Some(metadata) = metadata {
         format!(
             r#"<article>
-            <header>{}</header>
+            <header><h2>{}</h2></header>
     {}
-            <footer>Author: {}</footer>
+            <footer><small>Author: {}</small></footer>
     </article>
     "#,
             metadata.title, body, metadata.author
