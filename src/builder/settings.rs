@@ -23,3 +23,10 @@ pub struct Link {
     pub label: String,
     pub url: String,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct PageMetadata {
+    pub title: String,
+    pub author: String,
+    pub date: String,
+}

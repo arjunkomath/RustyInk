@@ -1,4 +1,4 @@
-use super::settings::Link;
+use super::settings::{Link, PageMetadata};
 
 pub const HEADER: &str = r#"<!DOCTYPE html>
 <html lang="en">
@@ -8,23 +8,32 @@ pub const HEADER: &str = r#"<!DOCTYPE html>
   
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <style>
+      body, h1, h2, h3, h4, h5, h6, small {
+        font-family: 'Fira Sans', sans-serif;
+      }
+    </style>
 
     <title>{{title}}</title>
   </head>
 
   <body>
-  <main class="container">
+    <main class="container">
 
-  <nav>
-      <ul>
-        %%LINKS%%
-      </ul>
-  </nav>
+    <nav>
+        <ul>
+          %%LINKS%%
+        </ul>
+    </nav>
 
-  <hgroup>
-    <h1>{{title}}</h1>
-    <h2>{{description}}</h2>
-  </hgroup>
+    <hgroup>
+      <h1>{{title}}</h1>
+      <h2>{{description}}</h2>
+    </hgroup>
 "#;
 
 pub fn render_links(links: &Vec<Link>) -> String {
@@ -38,18 +47,29 @@ pub fn render_links(links: &Vec<Link>) -> String {
     nav_links
 }
 
-pub fn render_article(body: &str) -> String {
-    format!(
-        r#"<article>
-        <header>Page title</header>
+pub fn render_article(body: &str, metadata: Option<PageMetadata>) -> String {
+    if let Some(metadata) = metadata {
+        format!(
+            r#"<article>
+            <header>{}</header>
+    {}
+            <footer>Author: {}</footer>
+    </article>
+    "#,
+            metadata.title, body, metadata.author
+        )
+    } else {
+        format!(
+            r#"<article>
     {}
     </article>"#,
-        body
-    )
+            body
+        )
+    }
 }
 
 pub const FOOTER: &str = r#"
-  </main>
+    </main>
   </body>
 
   <footer class="container">

@@ -3,6 +3,7 @@ use config::Config;
 use fs_extra::{copy_items, dir::CopyOptions};
 use handlebars::Handlebars;
 use log::{info, trace};
+use regex::Regex;
 use slugify::slugify;
 use std::{
     fs,
@@ -103,6 +104,28 @@ impl Worker {
         Ok(())
     }
 
+    fn get_markdown_and_metadata(&self, file: &str) -> Result<(Option<String>, String)> {
+        let markdown = fs::read_to_string(&file)?;
+
+        let metadata = Regex::new(r"(?s)---(.*?)---(.*)").unwrap();
+        if let Some(captures) = metadata.captures(&markdown) {
+            let metadata = captures.get(1).unwrap().as_str();
+            let markdown = captures.get(2).unwrap().as_str();
+
+            let parser = pulldown_cmark::Parser::new_ext(&markdown, pulldown_cmark::Options::all());
+            let mut content = String::new();
+            pulldown_cmark::html::push_html(&mut content, parser);
+
+            Ok((Some(metadata.to_string()), content))
+        } else {
+            let parser = pulldown_cmark::Parser::new_ext(&markdown, pulldown_cmark::Options::all());
+            let mut content = String::new();
+            pulldown_cmark::html::push_html(&mut content, parser);
+
+            Ok((None, content))
+        }
+    }
+
     pub fn get_output_dir(&self) -> &str {
         &self.output_dir
     }
@@ -132,12 +155,21 @@ impl Worker {
 
             let mut html = base::HEADER.to_owned();
 
-            let markdown = fs::read_to_string(&file)?;
-            let parser = pulldown_cmark::Parser::new_ext(&markdown, pulldown_cmark::Options::all());
-            let mut body = String::new();
-            pulldown_cmark::html::push_html(&mut body, parser);
+            let (metadata, body) = self.get_markdown_and_metadata(&file)?;
 
-            html.push_str(&base::render_article(&body).as_str());
+            if let Some(metadata) = metadata {
+                let metadata: settings::PageMetadata = Config::builder()
+                    .add_source(config::File::from_str(&metadata, config::FileFormat::Yaml))
+                    .build()
+                    .unwrap()
+                    .try_deserialize()
+                    .unwrap();
+
+                html.push_str(&base::render_article(&body, Some(metadata)).as_str());
+            } else {
+                html.push_str(&base::render_article(&body, None).as_str());
+            }
+
             html.push_str(base::FOOTER);
 
             let reg = Handlebars::new();
