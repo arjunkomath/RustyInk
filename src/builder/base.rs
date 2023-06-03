@@ -5,17 +5,13 @@ pub const HEADER: &str = r#"<!DOCTYPE html>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <meta name="description" content="{{description}}" />
   
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;700&display=swap" rel="stylesheet">
 
     <style>
-      body, h1, h2, h3, h4, h5, h6, small {
-        font-family: 'Fira Sans', sans-serif;
-      }
+      %%STYLES%%
     </style>
 
     <title>{{title}}</title>
@@ -37,7 +33,7 @@ pub const HEADER: &str = r#"<!DOCTYPE html>
 "#;
 
 pub fn render_links(links: &Vec<Link>) -> String {
-    let mut nav_links = String::from(format!(r#"<li><a href="{}">{}</a></li>"#, "/", "Home"));
+    let mut nav_links = String::new();
 
     for link in links {
         nav_links
