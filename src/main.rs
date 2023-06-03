@@ -61,7 +61,7 @@ async fn main() -> Result<()> {
                 .unwrap_or("3000".to_string())
                 .parse()?;
             let addr = SocketAddr::from(([0, 0, 0, 0], port));
-            println!("Dev server started on -> {}", port);
+            println!("Dev server started on -> http://localhost:{}", port);
 
             let _ = tokio::net::TcpListener::bind(addr).await.unwrap();
             let app = Router::new().nest_service("/", ServeDir::new(OUTPUT_DIR));
