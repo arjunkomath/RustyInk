@@ -42,9 +42,10 @@ async fn main() -> Result<()> {
     match args.command {
         Commands::Dev { watch, input_dir } => {
             let worker = Worker::new(&input_dir);
-
             let output_dir = worker.get_output_dir().to_string();
+            let port = worker.get_settings().dev.port.clone();
 
+            // Trigger a build
             worker.build().unwrap();
 
             if watch {
@@ -65,9 +66,6 @@ async fn main() -> Result<()> {
                 });
             }
 
-            let port: u16 = std::env::var("PORT")
-                .unwrap_or("3000".to_string())
-                .parse()?;
             let addr = SocketAddr::from(([0, 0, 0, 0], port));
             warn!("Dev server started on -> http://localhost:{}", port);
 
