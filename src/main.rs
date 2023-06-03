@@ -1,8 +1,9 @@
-use crate::builder::{Worker, OUTPUT_DIR};
+use crate::builder::Worker;
 use anyhow::{Ok, Result};
 use axum::Router;
 use clap::{Parser, Subcommand};
 use log::{info, warn};
+use std::path::PathBuf;
 use std::{net::SocketAddr, thread, time::Duration};
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
@@ -23,14 +24,14 @@ enum Commands {
     /// Start dev mode
     #[command()]
     Dev {
+        #[clap(required = true, help = "Input directory")]
+        input_dir: PathBuf,
+
         /// Watch for changes
         #[clap(short = 'w', long = "watch")]
         watch: bool,
     },
 }
-
-const PAGES_DIR: &str = "pages";
-const PUBLIC_DIR: &str = "public";
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -39,18 +40,22 @@ async fn main() -> Result<()> {
     let args = Cli::parse();
 
     match args.command {
-        Commands::Dev { watch } => {
+        Commands::Dev { watch, input_dir } => {
+            let worker = Worker::new(&input_dir);
+
+            let output_dir = worker.get_output_dir().to_string();
+
+            worker.build().unwrap();
+
             if watch {
                 tokio::task::spawn_blocking(move || {
                     let mut hotwatch =
                         hotwatch::Hotwatch::new().expect("hotwatch failed to initialize!");
-                    let worker = Worker::new(PAGES_DIR, PUBLIC_DIR);
-                    worker.rebuild().unwrap();
 
-                    info!("Watching for changes in -> {}", PAGES_DIR);
+                    info!("Watching for changes in -> {}", input_dir.to_str().unwrap());
                     hotwatch
-                        .watch(PAGES_DIR, move |_| {
-                            worker.rebuild().unwrap();
+                        .watch(input_dir, move |_| {
+                            worker.build().unwrap();
                         })
                         .expect("failed to watch content folder!");
 
@@ -67,7 +72,7 @@ async fn main() -> Result<()> {
             warn!("Dev server started on -> http://localhost:{}", port);
 
             let _ = tokio::net::TcpListener::bind(addr).await.unwrap();
-            let app = Router::new().nest_service("/", ServeDir::new(OUTPUT_DIR));
+            let app = Router::new().nest_service("/", ServeDir::new(output_dir));
             axum::Server::bind(&addr)
                 .serve(app.layer(TraceLayer::new_for_http()).into_make_service())
                 .await

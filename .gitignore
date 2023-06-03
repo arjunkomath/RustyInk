@@ -14,10 +14,9 @@ target/
 *.pdb
 
 # Generator Inputs
-/pages
-/public
+docs
 
 # Generator Output
-/output
+output
 
 .DS_Store

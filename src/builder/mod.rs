@@ -1,13 +1,18 @@
 use anyhow::Result;
 use fs_extra::{copy_items, dir::CopyOptions};
-use log::info;
+use log::{info, trace};
 use slugify::slugify;
-use std::{fs, path::Path};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 use tokio::time::Instant;
 use walkdir::WalkDir;
 
 mod base;
 
+pub const PAGES_DIR: &str = "pages";
+pub const PUBLIC_DIR: &str = "public";
 pub const OUTPUT_DIR: &str = "output";
 
 fn create_dir(dir: &str) -> Result<()> {
@@ -25,22 +30,42 @@ fn create_dir(dir: &str) -> Result<()> {
 pub struct Worker {
     pages_dir: String,
     public_dir: String,
+    output_dir: String,
 }
 
 impl Worker {
-    pub fn new(pages_dir: &str, public_dir: &str) -> Self {
-        create_dir(pages_dir).unwrap();
-        create_dir(public_dir).unwrap();
+    pub fn new(input_dir: &PathBuf) -> Self {
+        let pages_dir = input_dir
+            .join(PAGES_DIR)
+            .canonicalize()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        let public_dir = input_dir
+            .join(PUBLIC_DIR)
+            .canonicalize()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        let output_dir = OUTPUT_DIR;
+
+        create_dir(&pages_dir).unwrap();
+        create_dir(&public_dir).unwrap();
 
         Self {
             pages_dir: pages_dir.to_string(),
             public_dir: public_dir.to_string(),
+            output_dir: output_dir.to_string(),
         }
     }
 
     fn setup_output(&self) -> Result<()> {
-        let _ = fs::remove_dir_all(&OUTPUT_DIR);
-        create_dir(OUTPUT_DIR).unwrap();
+        let _ = fs::remove_dir_all(&self.output_dir);
+        create_dir(&self.output_dir).unwrap();
 
         Ok(())
     }
@@ -54,12 +79,16 @@ impl Worker {
             .collect();
         info!("Copying public files...");
         let options = CopyOptions::new();
-        copy_items(&public_files, OUTPUT_DIR, &options)?;
+        copy_items(&public_files, &self.output_dir, &options)?;
 
         Ok(())
     }
 
-    pub fn rebuild(&self) -> Result<()> {
+    pub fn get_output_dir(&self) -> &str {
+        &self.output_dir
+    }
+
+    pub fn build(&self) -> Result<()> {
         info!("Rebuilding site...");
 
         let start_time = Instant::now();
@@ -76,7 +105,7 @@ impl Worker {
             .collect();
 
         for file in &markdown_files {
-            info!("Processing file: {}", file);
+            trace!("Processing file: {}", file);
 
             let mut html = base::HEADER.to_owned();
 
@@ -89,7 +118,7 @@ impl Worker {
             html.push_str(base::FOOTER);
 
             let html_file = file
-                .replace(&self.pages_dir, OUTPUT_DIR)
+                .replace(&self.pages_dir, &self.output_dir)
                 .replace("page.md", "index.html");
 
             let html_file = if html_file.contains(".md") {
