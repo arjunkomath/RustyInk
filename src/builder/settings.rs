@@ -28,5 +28,4 @@ pub struct Link {
 pub struct PageMetadata {
     pub title: String,
     pub author: String,
-    pub date: String,
 }

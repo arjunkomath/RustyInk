@@ -31,6 +31,12 @@ enum Commands {
         #[clap(short = 'w', long = "watch")]
         watch: bool,
     },
+    /// Build the site
+    #[command()]
+    Build {
+        #[clap(required = true, help = "Input directory")]
+        input_dir: PathBuf,
+    },
 }
 
 #[tokio::main]
@@ -75,6 +81,10 @@ async fn main() -> Result<()> {
                 .serve(app.layer(TraceLayer::new_for_http()).into_make_service())
                 .await
                 .unwrap();
+        }
+        Commands::Build { input_dir } => {
+            let worker = Worker::new(&input_dir);
+            worker.build().unwrap();
         }
     }
 

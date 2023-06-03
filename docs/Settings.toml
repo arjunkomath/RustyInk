@@ -1,0 +1,11 @@
+[dev]
+port = 3000
+
+[site]
+title = "Rustic!nk"
+description = "Blazing fast static site generator written in Rust"
+top_navigation = [
+    { label = "About", url = "/about" },
+    { label = "GitHub", url = "https://github.com/arjunkomath/rustic-ink" },
+    { label = "Twitter", url = "https://twitter.com/arjunz" },
+]
