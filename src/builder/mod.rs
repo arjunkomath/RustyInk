@@ -1,6 +1,9 @@
 use anyhow::Result;
 use fs_extra::{copy_items, dir::CopyOptions};
+use log::info;
+use slugify::slugify;
 use std::{fs, path::Path};
+use tokio::time::Instant;
 use walkdir::WalkDir;
 
 mod base;
@@ -11,7 +14,7 @@ fn create_dir(dir: &str) -> Result<()> {
     if let Err(err) = fs::metadata(&dir) {
         if err.kind() == std::io::ErrorKind::NotFound {
             if let Err(err) = fs::create_dir_all(&dir) {
-                eprintln!("Failed to create pages directory: {}", err);
+                eprintln!("Failed to create {} directory: {}", dir, err);
             }
         }
     }
@@ -49,7 +52,7 @@ impl Worker {
             .map(|e| e.path().display().to_string())
             .skip(1)
             .collect();
-        println!("Copying public files...");
+        info!("Copying public files...");
         let options = CopyOptions::new();
         copy_items(&public_files, OUTPUT_DIR, &options)?;
 
@@ -57,7 +60,9 @@ impl Worker {
     }
 
     pub fn rebuild(&self) -> Result<()> {
-        println!("Rebuilding site...");
+        info!("Rebuilding site...");
+
+        let start_time = Instant::now();
 
         self.setup_output()?;
         self.copy_public_files()?;
@@ -70,10 +75,8 @@ impl Worker {
             .map(|e| e.path().display().to_string())
             .collect();
 
-        let mut html_files = Vec::with_capacity(markdown_files.len());
-
         for file in &markdown_files {
-            println!("Processing file: {}", file);
+            info!("Processing file: {}", file);
 
             let mut html = base::HEADER.to_owned();
 
@@ -89,13 +92,32 @@ impl Worker {
                 .replace(&self.pages_dir, OUTPUT_DIR)
                 .replace("page.md", "index.html");
 
+            let html_file = if html_file.contains(".md") {
+                let html_file = html_file
+                    .replace(".md", "/index.html")
+                    .split("/")
+                    .map(|x| {
+                        if x.contains("index") {
+                            x.to_string()
+                        } else {
+                            format!("{}", slugify!(x))
+                        }
+                    })
+                    .collect::<Vec<String>>()
+                    .join("/");
+                html_file
+            } else {
+                html_file
+            };
+
             let folder = Path::new(&html_file).parent().unwrap();
 
             let _ = fs::create_dir_all(folder);
             fs::write(&html_file, html)?;
-
-            html_files.push(html_file);
         }
+
+        let elapsed_time = start_time.elapsed();
+        info!("Completed in: {:?}", elapsed_time);
 
         Ok(())
     }
