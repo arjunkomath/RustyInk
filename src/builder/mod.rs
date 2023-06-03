@@ -17,7 +17,7 @@ mod settings;
 
 pub const PAGES_DIR: &str = "pages";
 pub const PUBLIC_DIR: &str = "public";
-pub const OUTPUT_DIR: &str = "output";
+pub const OUTPUT_DIR: &str = "_site";
 
 fn create_dir(dir: &str) -> Result<()> {
     if let Err(err) = fs::metadata(&dir) {
