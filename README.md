@@ -2,7 +2,7 @@
 
 [![crates.io](https://img.shields.io/crates/v/rustyink)](https://crates.io/crates/rustyink)
 [![Build & test](https://github.com/arjunkomath/RustyInk/actions/workflows/build_test.yml/badge.svg)](https://github.com/arjunkomath/RustyInk/actions/workflows/build_test.yml)
-[![Publish to Pages](https://github.com/arjunkomath/RustyInk/actions/workflows/static.yml/badge.svg)](https://github.com/arjunkomath/RustyInk/actions/workflows/static.yml)
+[![Publish to Pages](https://github.com/arjunkomath/RustyInk/actions/workflows/publish.yml/badge.svg)](https://github.com/arjunkomath/RustyInk/actions/workflows/publish.yml)
 
 A blazing fast static site generator in Rust
 
