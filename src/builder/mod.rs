@@ -1,7 +1,7 @@
 use anyhow::Result;
+use colored::Colorize;
 use config::Config;
 use fs_extra::{copy_items, dir::CopyOptions};
-use log::{info, trace};
 use slugify::slugify;
 use std::{
     fs,
@@ -97,7 +97,6 @@ impl Worker {
             .map(|e| e.path().display().to_string())
             .skip(1)
             .collect();
-        info!("Copying public files...");
         let options = CopyOptions::new();
         copy_items(&public_files, &self.output_dir, &options)?;
 
@@ -122,7 +121,7 @@ impl Worker {
     }
 
     pub fn build(&self) -> Result<()> {
-        info!("Rebuilding site...");
+        println!("{}...", "\n- Building site".bold());
 
         let start_time = Instant::now();
 
@@ -137,8 +136,6 @@ impl Worker {
             .collect();
 
         for file in &markdown_files {
-            trace!("Processing file: {}", file);
-
             let html =
                 render::Render::new(&file, &self.styles_file, self.get_settings()).render()?;
 
@@ -170,7 +167,7 @@ impl Worker {
         }
 
         let elapsed_time = start_time.elapsed();
-        info!("Completed in: {:?}", elapsed_time);
+        println!("- Completed in: {:?}", elapsed_time);
 
         Ok(())
     }

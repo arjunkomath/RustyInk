@@ -22,7 +22,6 @@ docs/
 ├─ global.css
 ```
 
-
 The `docs` folder is the input directory of the project and is always specified while running dev server or building. You can specify a different input directory like this:
 ```bash
 rustyink dev <input-dir-path>

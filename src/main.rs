@@ -2,7 +2,7 @@ use crate::builder::Worker;
 use anyhow::{Ok, Result};
 use axum::Router;
 use clap::{Parser, Subcommand};
-use log::{info, warn};
+use colored::Colorize;
 use std::path::PathBuf;
 use std::{net::SocketAddr, thread, time::Duration};
 use tower_http::services::ServeDir;
@@ -41,8 +41,6 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    env_logger::init();
-
     let args = Cli::parse();
 
     match args.command {
@@ -59,7 +57,10 @@ async fn main() -> Result<()> {
                     let mut hotwatch =
                         hotwatch::Hotwatch::new().expect("hotwatch failed to initialize!");
 
-                    info!("Watching for changes in -> {}", input_dir.to_str().unwrap());
+                    println!(
+                        "- Watching for changes in -> {}",
+                        input_dir.to_str().unwrap().blue().bold()
+                    );
                     hotwatch
                         .watch(input_dir, move |_| {
                             worker.build().unwrap();
@@ -73,7 +74,11 @@ async fn main() -> Result<()> {
             }
 
             let addr = SocketAddr::from(([0, 0, 0, 0], port));
-            warn!("Dev server started on -> http://localhost:{}", port);
+            println!(
+                "\n- Dev server started on -> {}:{}",
+                "http://localhost".bold(),
+                port
+            );
 
             let _ = tokio::net::TcpListener::bind(addr).await.unwrap();
             let app = Router::new().nest_service("/", ServeDir::new(output_dir));
