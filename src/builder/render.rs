@@ -42,13 +42,24 @@ impl Render {
         html.push_str(base::FOOTER);
 
         let reg = Handlebars::new();
-        let html = reg.render_template(&html, &self.settings.site)?;
+        let html = reg.render_template(&html, &self.settings.meta)?;
 
         let top_navigation = base::render_links(&self.settings.navigation.links);
         let html = html.replace("%%LINKS%%", &top_navigation);
 
         let global_styles = self.get_global_styles()?;
         let html = html.replace("%%STYLES%%", &global_styles);
+
+        let html = if self.settings.site.code_highlighting {
+            html.replace("%%CODE_HIGHIGHTING_STYLES%%", base::CODE_HIGHIGHTING_STYLES)
+                .replace(
+                    "%%CODE_HIGHIGHTING_SCRIPTS%%",
+                    base::CODE_HIGHIGHTING_SCRIPTS,
+                )
+        } else {
+            html.replace("%%CODE_HIGHIGHTING_STYLES%%", "")
+                .replace("%%CODE_HIGHIGHTING_SCRIPTS%%", "")
+        };
 
         Ok(html)
     }

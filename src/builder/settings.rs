@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct Settings {
     pub dev: DevSettings,
     pub site: SiteSettings,
+    pub meta: SiteMeta,
     pub navigation: NavigationSettings,
 }
 
@@ -12,8 +13,13 @@ pub struct DevSettings {
     pub port: u16,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct SiteSettings {
+    pub code_highlighting: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SiteMeta {
     pub title: String,
     pub description: String,
 }

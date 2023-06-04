@@ -35,7 +35,7 @@ pub struct Worker {
     public_dir: String,
     output_dir: String,
     styles_file: String,
-    settings: settings::Settings,
+    config_file: String,
 }
 
 impl Worker {
@@ -74,21 +74,12 @@ impl Worker {
             .unwrap()
             .to_string();
 
-        let settings: settings::Settings = Config::builder()
-            .add_source(config::File::with_name(&config_file))
-            .build()
-            .unwrap()
-            .try_deserialize()
-            .unwrap();
-
-        // println!("{:#?}", settings);
-
         Self {
             pages_dir: pages_dir.to_string(),
             public_dir: public_dir.to_string(),
             output_dir: output_dir.to_string(),
+            config_file: config_file.to_string(),
             styles_file: syles_file.to_string(),
-            settings,
         }
     }
 
@@ -117,8 +108,17 @@ impl Worker {
         &self.output_dir
     }
 
-    pub fn get_settings(&self) -> &settings::Settings {
-        &self.settings
+    pub fn get_settings(&self) -> settings::Settings {
+        let settings: settings::Settings = Config::builder()
+            .add_source(config::File::with_name(&self.config_file))
+            .build()
+            .unwrap()
+            .try_deserialize()
+            .unwrap();
+
+        // println!("{:#?}", settings);
+
+        settings
     }
 
     pub fn build(&self) -> Result<()> {
@@ -140,7 +140,7 @@ impl Worker {
             trace!("Processing file: {}", file);
 
             let html =
-                render::Render::new(&file, &self.styles_file, self.settings.clone()).render()?;
+                render::Render::new(&file, &self.styles_file, self.get_settings()).render()?;
 
             let html_file = file
                 .replace(&self.pages_dir, &self.output_dir)

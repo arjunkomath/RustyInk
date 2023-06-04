@@ -1,3 +1,34 @@
+> 🚧 This project is currently under development. Expect breaking changes. 🚧
+
 A sleek and minimalist static site generator written in Rust. Designed with simplicity in mind, Rustic Ink makes website creation a breeze. It supports Markdown files, allowing you to write content with ease. Despite its simplicity, Rustic Ink is lightning-fast and lightweight. Powered by picocss, it ensures an optimized and efficient website rendering process. With Rustic Ink, you can create beautiful websites that are both minimalistic and performant.
 
-**This project is currently under development. Please check back later.**
+### Features
+- [x] Markdown support
+- [x] Customizable
+
+### Project Structure
+
+The following folder structure is expected by Rustic Ink:
+
+```
+docs/
+├─ public/
+│  ├─ favicon.ico
+├─ pages/
+│  ├─ page.md
+│  ├─ about/
+│  │  ├─ page.md
+├─ Settings.toml
+├─ global.css
+```
+
+
+The `docs` folder is the input directory of the project and is always specified while running dev server or building. You can specify a different input directory like this:
+```bash
+rustic-ink dev <input-dir-path>
+```
+
+- The `public` folder contains all the static assets of the website, these files are copied as-is to the output directory.
+- The `pages` folder contains all the Markdown files, this is where you write your content.
+- The `Settings.toml` file contains the settings of the website, you can customize the website by changing the values in this file.
+- The `global.css` file contains the global CSS of the website, you can write your own CSS in this file.
