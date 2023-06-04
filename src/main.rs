@@ -11,9 +11,9 @@ use tower_http::trace::TraceLayer;
 mod builder;
 
 #[derive(Debug, Parser)]
-#[command(name = "rink")]
-#[command(bin_name = "rink")]
-#[command(about = "A blazing fast static site generator in Rust", long_about = None)]
+#[command(name = "rustyink")]
+#[command(bin_name = "rustyink")]
+#[command(about = "A blazing fast static site generator", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
