@@ -2,6 +2,11 @@
 name = "rustyink"
 version = "0.0.1"
 edition = "2021"
+description = "Blazing fast static site generator"
+authors = ["Arjun Komath <arjunkomath@gmail.com>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/arjunkomath/RustyInk"
+keywords = ["static", "site", "generator"]
 
 [dependencies]
 anyhow = "1.0.71"
