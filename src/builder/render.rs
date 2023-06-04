@@ -50,15 +50,12 @@ impl Render {
         let global_styles = self.get_global_styles()?;
         let html = html.replace("%%STYLES%%", &global_styles);
 
-        let html = if self.settings.site.code_highlighting {
-            html.replace("%%CODE_HIGHIGHTING_STYLES%%", base::CODE_HIGHIGHTING_STYLES)
-                .replace(
-                    "%%CODE_HIGHIGHTING_SCRIPTS%%",
-                    base::CODE_HIGHIGHTING_SCRIPTS,
-                )
-        } else {
-            html.replace("%%CODE_HIGHIGHTING_STYLES%%", "")
-                .replace("%%CODE_HIGHIGHTING_SCRIPTS%%", "")
+        let html = {
+            if let Some(site) = &self.settings.site {
+                self.handle_code_highlighting(&html, site.code_highlighting)
+            } else {
+                self.handle_code_highlighting(&html, false)
+            }
         };
 
         Ok(html)
@@ -89,6 +86,23 @@ impl Render {
             pulldown_cmark::html::push_html(&mut content, parser);
 
             Ok((None, content))
+        }
+    }
+
+    fn handle_code_highlighting(&self, html: &str, enabled: bool) -> String {
+        let html = html.to_string();
+
+        if enabled {
+            return html
+                .replace("%%CODE_HIGHIGHTING_STYLES%%", base::CODE_HIGHIGHTING_STYLES)
+                .replace(
+                    "%%CODE_HIGHIGHTING_SCRIPTS%%",
+                    base::CODE_HIGHIGHTING_SCRIPTS,
+                );
+        } else {
+            return html
+                .replace("%%CODE_HIGHIGHTING_STYLES%%", "")
+                .replace("%%CODE_HIGHIGHTING_SCRIPTS%%", "");
         }
     }
 }

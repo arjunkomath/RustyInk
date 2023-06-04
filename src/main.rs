@@ -99,6 +99,7 @@ port = 3000"#,
                     );
                     hotwatch
                         .watch(input_dir, move |_| {
+                            println!("\n- {}", "File(s) changed".bold().yellow());
                             worker.build().unwrap();
                         })
                         .expect("failed to watch content folder!");

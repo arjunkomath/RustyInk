@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Deserialize)]
 pub struct Settings {
     pub dev: DevSettings,
-    pub site: SiteSettings,
+    pub site: Option<SiteSettings>,
     pub meta: SiteMeta,
     pub navigation: NavigationSettings,
 }
