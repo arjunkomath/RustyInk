@@ -83,8 +83,8 @@ pub const FOOTER: &str = r#"
 
   <footer class="container">
     <small>
-      Built with <a href="https://github.com/arjunkomath/rustic-ink" target="_blank" rel="noopener noreferrer">RusticInk</a> •
-      <a target="_blank" rel="noopener noreferrer" href="https://github.com/arjunkomath/rustic-ink">
+      Built with <a href="https://github.com/arjunkomath/rustyink" target="_blank" rel="noopener noreferrer">Rusty!nk</a> •
+      <a target="_blank" rel="noopener noreferrer" href="https://github.com/arjunkomath/rustyink">
         Source code
       </a>
     </small>

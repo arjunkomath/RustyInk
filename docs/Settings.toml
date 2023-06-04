@@ -5,12 +5,12 @@ port = 3000
 code_highlighting = true
 
 [meta]
-title = "Rustic Ink"
+title = "Rusty!nk"
 description = "Blazing fast static site generator written in Rust"
 
 [navigation]
 links = [
     { label = "~/", url = "/" },
-    { label = "GitHub", url = "https://github.com/arjunkomath/rustic-ink" },
+    { label = "GitHub", url = "https://github.com/arjunkomath/rustyink" },
     { label = "Twitter", url = "https://twitter.com/arjunz" },
 ]

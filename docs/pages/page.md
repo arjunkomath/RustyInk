@@ -1,6 +1,6 @@
 > 🚧 This project is currently under development. Expect breaking changes. 🚧
 
-A sleek and minimalist static site generator written in Rust. Designed with simplicity in mind, Rustic Ink makes website creation a breeze. It supports Markdown files, allowing you to write content with ease. Despite its simplicity, Rustic Ink is lightning-fast and lightweight. Powered by picocss, it ensures an optimized and efficient website rendering process. With Rustic Ink, you can create beautiful websites that are both minimalistic and performant.
+A sleek and minimalist static site generator written in Rust. Designed with simplicity in mind, RustyInk makes website creation a breeze. It supports Markdown files, allowing you to write content with ease. Despite its simplicity, RustyInk is lightning-fast and lightweight. Powered by picocss, it ensures an optimized and efficient website rendering process. With RustyInk, you can create beautiful websites that are both minimalistic and performant.
 
 ### Features
 - [x] Markdown support
@@ -8,7 +8,7 @@ A sleek and minimalist static site generator written in Rust. Designed with simp
 
 ### Project Structure
 
-The following folder structure is expected by Rustic Ink:
+The following folder structure is expected by RustyInk:
 
 ```
 docs/
@@ -25,7 +25,7 @@ docs/
 
 The `docs` folder is the input directory of the project and is always specified while running dev server or building. You can specify a different input directory like this:
 ```bash
-rustic-ink dev <input-dir-path>
+rustyink dev <input-dir-path>
 ```
 
 - The `public` folder contains all the static assets of the website, these files are copied as-is to the output directory.
