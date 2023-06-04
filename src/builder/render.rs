@@ -1,10 +1,10 @@
+use std::fs;
+
+use super::{base, settings};
 use anyhow::Result;
 use config::Config;
 use handlebars::Handlebars;
 use regex::Regex;
-use std::fs;
-
-use super::{base, settings};
 
 pub struct Render {
     pub file: String,

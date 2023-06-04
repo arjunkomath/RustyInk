@@ -1,3 +1,4 @@
+use self::utils::{create_dir_in_path, path_to_string};
 use anyhow::Result;
 use colored::Colorize;
 use config::Config;
@@ -13,22 +14,11 @@ use walkdir::WalkDir;
 mod base;
 mod render;
 mod settings;
+pub mod utils;
 
 pub const PAGES_DIR: &str = "pages";
 pub const PUBLIC_DIR: &str = "public";
 pub const OUTPUT_DIR: &str = "_site";
-
-fn create_dir(dir: &str) -> Result<()> {
-    if let Err(err) = fs::metadata(&dir) {
-        if err.kind() == std::io::ErrorKind::NotFound {
-            if let Err(err) = fs::create_dir_all(&dir) {
-                eprintln!("Failed to create {} directory: {}", dir, err);
-            }
-        }
-    }
-
-    Ok(())
-}
 
 pub struct Worker {
     pages_dir: String,
@@ -40,22 +30,8 @@ pub struct Worker {
 
 impl Worker {
     pub fn new(input_dir: &PathBuf) -> Self {
-        let pages_dir = input_dir
-            .join(PAGES_DIR)
-            .canonicalize()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string();
-
-        let public_dir = input_dir
-            .join(PUBLIC_DIR)
-            .canonicalize()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string();
-
+        let pages_dir = path_to_string(&input_dir.join(PAGES_DIR));
+        let public_dir = path_to_string(&input_dir.join(PUBLIC_DIR));
         let output_dir = OUTPUT_DIR;
 
         let syles_file = input_dir
@@ -85,7 +61,7 @@ impl Worker {
 
     fn setup_output(&self) -> Result<()> {
         let _ = fs::remove_dir_all(&self.output_dir);
-        create_dir(&self.output_dir).unwrap();
+        create_dir_in_path(&PathBuf::from(&self.output_dir))?;
 
         Ok(())
     }
