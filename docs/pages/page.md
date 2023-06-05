@@ -1,10 +1,23 @@
+[![crates.io](https://img.shields.io/crates/v/rustyink)](https://crates.io/crates/rustyink)
+[![Build & test](https://github.com/arjunkomath/RustyInk/actions/workflows/build_test.yml/badge.svg)](https://github.com/arjunkomath/RustyInk/actions/workflows/build_test.yml)
+[![Publish to Pages](https://github.com/arjunkomath/RustyInk/actions/workflows/publish.yml/badge.svg)](https://github.com/arjunkomath/RustyInk/actions/workflows/publish.yml)
+
 > 🚧 This project is currently under development. Expect breaking changes. 🚧
 
 A sleek and minimalist static site generator written in Rust. Designed with simplicity in mind, RustyInk makes website creation a breeze. It supports Markdown files, allowing you to write content with ease. Despite its simplicity, RustyInk is lightning-fast and lightweight. Powered by picocss, it ensures an optimized and efficient website rendering process. With RustyInk, you can create beautiful websites that are both minimalistic and performant.
 
+### Installation
+
+You can install RustyInk using Cargo:
+
+```bash
+cargo install rustyink
+```
+
 ### Features
 - [x] Markdown support
 - [x] Customizable
+- [x] Syntax highlighting
 
 ### Project Structure
 

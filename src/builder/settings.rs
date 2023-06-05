@@ -15,7 +15,8 @@ pub struct DevSettings {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct SiteSettings {
-    pub code_highlighting: bool,
+    pub block_search_indexing: Option<bool>,
+    pub code_highlighting: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

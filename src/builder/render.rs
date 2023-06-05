@@ -1,6 +1,9 @@
 use std::fs;
 
-use super::{base, settings};
+use super::{
+    base,
+    settings::{self, Settings},
+};
 use anyhow::Result;
 use config::Config;
 use handlebars::Handlebars;
@@ -50,12 +53,9 @@ impl Render {
         let global_styles = self.get_global_styles()?;
         let html = html.replace("%%STYLES%%", &global_styles);
 
-        let html = {
-            if let Some(site) = &self.settings.site {
-                self.handle_code_highlighting(&html, site.code_highlighting)
-            } else {
-                self.handle_code_highlighting(&html, false)
-            }
+        let html = match self.handle_code_highlighting(&html, &self.settings) {
+            Ok(html) => html,
+            _ => html,
         };
 
         Ok(html)
@@ -89,20 +89,23 @@ impl Render {
         }
     }
 
-    fn handle_code_highlighting(&self, html: &str, enabled: bool) -> String {
-        let html = html.to_string();
+    fn handle_code_highlighting(&self, html: &str, settings: &Settings) -> Result<String> {
+        let enabled = match settings.site.as_ref() {
+            Some(site) => site.code_highlighting.unwrap_or(false),
+            None => false,
+        };
 
-        if enabled {
-            return html
-                .replace("%%CODE_HIGHIGHTING_STYLES%%", base::CODE_HIGHIGHTING_STYLES)
+        let result = if enabled {
+            html.replace("%%CODE_HIGHIGHTING_STYLES%%", base::CODE_HIGHIGHTING_STYLES)
                 .replace(
                     "%%CODE_HIGHIGHTING_SCRIPTS%%",
                     base::CODE_HIGHIGHTING_SCRIPTS,
-                );
+                )
         } else {
-            return html
-                .replace("%%CODE_HIGHIGHTING_STYLES%%", "")
-                .replace("%%CODE_HIGHIGHTING_SCRIPTS%%", "");
-        }
+            html.replace("%%CODE_HIGHIGHTING_STYLES%%", "")
+                .replace("%%CODE_HIGHIGHTING_SCRIPTS%%", "")
+        };
+
+        Ok(result)
     }
 }

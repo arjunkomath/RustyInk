@@ -13,6 +13,7 @@ use walkdir::WalkDir;
 
 mod base;
 mod render;
+mod seo;
 mod settings;
 pub mod utils;
 
@@ -140,6 +141,16 @@ impl Worker {
             let folder = Path::new(&html_file).parent().unwrap();
             let _ = fs::create_dir_all(folder);
             fs::write(&html_file, html)?;
+        }
+
+        // Handle robots.txt, ignore if there is a file already
+        if !Path::new(&self.output_dir).join("robots.txt").exists() {
+            match seo::generate_robots_txt(&self.get_settings()) {
+                Ok(robots_txt) => {
+                    fs::write(Path::new(&self.output_dir).join("robots.txt"), robots_txt)?;
+                }
+                _ => {}
+            }
         }
 
         let elapsed_time = start_time.elapsed();
