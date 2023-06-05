@@ -4,8 +4,6 @@
 [![Build & test](https://github.com/arjunkomath/RustyInk/actions/workflows/build_test.yml/badge.svg)](https://github.com/arjunkomath/RustyInk/actions/workflows/build_test.yml)
 [![Publish to Pages](https://github.com/arjunkomath/RustyInk/actions/workflows/publish.yml/badge.svg)](https://github.com/arjunkomath/RustyInk/actions/workflows/publish.yml)
 
-A blazing fast static site generator in Rust
-
 > 🚧 This project is currently under development. Expect breaking changes. 🚧
 
 A sleek and minimalist static site generator written in Rust. Designed with simplicity in mind, RustyInk makes website creation a breeze. It supports Markdown files, allowing you to write content with ease. Despite its simplicity, RustyInk is lightning-fast and lightweight. Powered by picocss, it ensures an optimized and efficient website rendering process. With RustyInk, you can create beautiful websites that are both minimalistic and performant.
@@ -19,6 +17,7 @@ cargo install rustyink
 ```
 
 ### Features
+
 - [x] Markdown support
 - [x] Customizable
 - [x] Syntax highlighting
@@ -40,6 +39,7 @@ docs/
 ```
 
 The `docs` folder is the input directory of the project and is always specified while running dev server or building. You can specify a different input directory like this:
+
 ```bash
 rustyink dev <input-dir-path>
 ```
