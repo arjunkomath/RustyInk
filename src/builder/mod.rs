@@ -112,6 +112,8 @@ impl Worker {
             .map(|e| e.path().display().to_string())
             .collect();
 
+        let mut all_file_paths: Vec<String> = Vec::with_capacity(markdown_files.len());
+
         for file in &markdown_files {
             let html =
                 render::Render::new(&file, &self.styles_file, self.get_settings()).render()?;
@@ -141,15 +143,24 @@ impl Worker {
             let folder = Path::new(&html_file).parent().unwrap();
             let _ = fs::create_dir_all(folder);
             fs::write(&html_file, html)?;
+            all_file_paths.push(html_file);
         }
 
         // Handle robots.txt, ignore if there is a file already
         if !Path::new(&self.output_dir).join("robots.txt").exists() {
-            match seo::generate_robots_txt(&self.get_settings()) {
-                Ok(robots_txt) => {
-                    fs::write(Path::new(&self.output_dir).join("robots.txt"), robots_txt)?;
+            if let Ok(robots_txt) = seo::generate_robots_txt(&self.get_settings()) {
+                fs::write(Path::new(&self.output_dir).join("robots.txt"), robots_txt)?;
+            }
+        }
+
+        // Handle sitemap.xml, ignore if there is a file already
+        if !Path::new(&self.output_dir).join("sitemap.xml").exists() {
+            if let Ok(sitemap_xml) =
+                seo::generate_sitemap_xml(&self.get_settings(), &self.output_dir, &all_file_paths)
+            {
+                if let Some(sitemap_xml) = sitemap_xml {
+                    fs::write(Path::new(&self.output_dir).join("sitemap.xml"), sitemap_xml)?;
                 }
-                _ => {}
             }
         }
 
