@@ -6,6 +6,7 @@ use crate::builder::utils::{create_dir_in_path, path_to_string};
 use crate::builder::{Worker, PAGES_DIR, PUBLIC_DIR};
 use anyhow::{Ok, Result};
 use axum::Router;
+use builder::settings::Settings;
 use clap::{Parser, Subcommand};
 use colored::Colorize;
 use tower_http::services::ServeDir;
@@ -62,19 +63,18 @@ async fn main() -> Result<()> {
 
             let project_dir_path = path_to_string(&project_dir);
 
-            let settings = String::from(
-                r#"[dev]
-port = 3000"#,
-            );
+            let settings = Settings::new();
             let settings_file = format!("{}/Settings.toml", &project_dir_path);
-            fs::write(&settings_file, settings).unwrap();
+            fs::write(&settings_file, &settings).unwrap();
 
             let global_css_file = format!("{}/global.css", &project_dir_path);
-            let global_css_content = String::from(r#"/* Global CSS */"#);
+            let global_css_content = String::from(
+                r#"@import url('https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css');"#,
+            );
             fs::write(&global_css_file, global_css_content).unwrap();
 
             let pages_dir_path = path_to_string(&project_dir.join(PAGES_DIR));
-            let index_file = format!("{}/index.md", &pages_dir_path);
+            let index_file = format!("{}/page.md", &pages_dir_path);
             let index_content = r#"Hello!"#;
             fs::write(&index_file, index_content).unwrap();
 

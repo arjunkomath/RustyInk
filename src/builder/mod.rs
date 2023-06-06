@@ -14,7 +14,7 @@ use walkdir::WalkDir;
 mod base;
 mod render;
 mod seo;
-mod settings;
+pub mod settings;
 pub mod utils;
 
 pub const PAGES_DIR: &str = "pages";
