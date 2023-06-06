@@ -108,7 +108,8 @@ impl Worker {
         let mut all_file_paths: Vec<String> = Vec::with_capacity(markdown_files.len());
 
         for file in &markdown_files {
-            let html = render::Render::new(&file, &self.theme_dir, self.get_settings()).render()?;
+            let html =
+                render::Render::new(&file, &self.theme_dir, self.get_settings()).render_page()?;
 
             let html_file = file
                 .replace(&self.pages_dir, &self.output_dir)

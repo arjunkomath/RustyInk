@@ -1,20 +1,11 @@
 use std::fs;
 
-use super::settings::{self, Link, PageMetadata, Settings};
+use super::settings::{self, Link};
 use anyhow::Result;
 use config::Config;
 use handlebars::Handlebars;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-
-const CODE_HIGHIGHTING_STYLES: &'static str = r#"
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css" integrity="sha512-Jk4AqjWsdSzSWCSuQTfYRIF84Rq/eV0G2+tu07byYwHcbTGfdmLrHjUSwvzp5HvbiqK4ibmNwdcG49Y5RGYPTg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-"#;
-
-const CODE_HIGHIGHTING_SCRIPTS: &'static str = r#"
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js" integrity="sha512-rdhY3cbXURo13l/WU9VlaRyaIYeJ/KBakckXIvJNAQde8DgpOmE+eZf7ha4vdqVjTtwQt69bD2wH2LXob/LB7Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script type="text/javascript">hljs.highlightAll();</script>
-"#;
 
 pub struct Render {
     pub file: String,
@@ -26,15 +17,22 @@ pub struct Render {
 struct RenderData {
     meta_title: String,
     meta_description: String,
-
-    links: String,
+    styles: String,
+    links: Vec<Link>,
+    code_highlighting: bool,
 
     content: String,
+}
 
-    styles: String,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PageMetadata {
+    pub template: Option<String>,
 
-    code_highighting_styles: String,
-    code_highighting_scripts: String,
+    pub title: String,
+    pub footnote: Option<String>,
+    pub author: Option<String>,
+    pub author_link: Option<String>,
+    pub published: Option<String>,
 }
 
 impl Render {
@@ -46,52 +44,45 @@ impl Render {
         }
     }
 
-    pub fn render(&self) -> Result<String> {
+    pub fn render_page(&self) -> Result<String> {
         let (metadata, body) = self.get_markdown_and_metadata()?;
 
-        let (template_name, meta_title, meta_description, content) =
-            if let Some(metadata) = metadata {
-                let metadata: settings::PageMetadata = Config::builder()
-                    .add_source(config::File::from_str(&metadata, config::FileFormat::Yaml))
-                    .build()
-                    .unwrap()
-                    .try_deserialize()
-                    .unwrap();
+        let (meta_title, meta_description, content) = if let Some(metadata) = metadata {
+            let metadata: PageMetadata = Config::builder()
+                .add_source(config::File::from_str(&metadata, config::FileFormat::Yaml))
+                .build()
+                .unwrap()
+                .try_deserialize()
+                .unwrap();
 
-                let template_name = metadata.template.clone().unwrap_or("app".to_string());
-                let title = format!("{} | {}", self.settings.meta.title, metadata.title);
-                let description = self.settings.meta.description.clone();
-                let content = self.render_article(&body, Some(metadata));
+            let title = format!("{} | {}", self.settings.meta.title, metadata.title);
+            let description = self.settings.meta.description.clone();
+            let content = self
+                .render_body(&body, Some(metadata))
+                .unwrap_or(String::new());
 
-                (template_name, title, description, content)
-            } else {
-                let content = self.render_article(&body, None);
+            (title, description, content)
+        } else {
+            let content = self.render_body(&body, None).unwrap_or(String::new());
 
-                (
-                    "app".to_string(),
-                    self.settings.meta.title.clone(),
-                    self.settings.meta.description.clone(),
-                    content,
-                )
-            };
-
-        let links = self.render_links(&self.settings.navigation.links);
+            (
+                self.settings.meta.title.clone(),
+                self.settings.meta.description.clone(),
+                content,
+            )
+        };
 
         let styles = self.get_global_styles()?;
 
-        let (code_highighting_styles, code_highighting_scripts) =
-            self.handle_code_highlighting(&self.settings)?;
-
         let html = Handlebars::new().render_template(
-            &self.get_template(&template_name)?,
+            &self.get_template("app")?,
             &RenderData {
                 meta_title,
                 meta_description,
-                links,
                 content,
                 styles,
-                code_highighting_styles,
-                code_highighting_scripts,
+                links: self.settings.navigation.links.clone(),
+                code_highlighting: true,
             },
         )?;
 
@@ -132,82 +123,19 @@ impl Render {
         }
     }
 
-    fn handle_code_highlighting(&self, settings: &Settings) -> Result<(String, String)> {
-        let enabled = match settings.site.as_ref() {
-            Some(site) => site.code_highlighting.unwrap_or(false),
-            None => false,
-        };
-
-        if enabled {
-            Ok((
-                String::from(CODE_HIGHIGHTING_STYLES),
-                String::from(CODE_HIGHIGHTING_SCRIPTS),
-            ))
-        } else {
-            Ok((String::new(), String::new()))
-        }
-    }
-
-    pub fn render_links(&self, links: &Vec<Link>) -> String {
-        let mut nav_links = String::new();
-
-        for link in links {
-            nav_links.push_str(
-                format!(r#"<li><a href="{}">{}</a></li>"#, link.url, link.label).as_str(),
-            );
-        }
-
-        nav_links
-    }
-
-    pub fn render_article(&self, body: &str, metadata: Option<PageMetadata>) -> String {
+    fn render_body(&self, body: &str, metadata: Option<PageMetadata>) -> Result<String> {
         if let Some(metadata) = metadata {
-            let mut header_extras: Vec<String> = vec![];
+            let template = metadata.template.clone().unwrap_or(String::new());
 
-            let author = if let Some(author) = &metadata.author {
-                format!("// Written by {}", author)
+            if template.is_empty() {
+                Ok(body.to_string())
             } else {
-                String::new()
-            };
-            let author = if let Some(author_url) = &metadata.author_url {
-                format!(
-                    "<a target=\"_blank\" rel=\"noopener noreferrer\" href=\"{}\">{}</a>",
-                    author_url, author
-                )
-            } else {
-                author
-            };
-            header_extras.push(format!("<p><small>{}</small></p>", author));
-
-            let published = if let Some(published) = &metadata.published {
-                format!("<time datetime=\"{}\">// {}</time>", published, published)
-            } else {
-                String::new()
-            };
-            header_extras.push(format!("<p><small>{}</small></p>", published));
-
-            format!(
-                r#"<article>
-            <header>
-              <h2>{}</h2>
-              {}
-            </header>
-    {}
-            <footer><small>{}</small></footer>
-    </article>
-    "#,
-                metadata.title,
-                header_extras.join(""),
-                body,
-                metadata.footnote.unwrap_or(String::new())
-            )
+                let body =
+                    Handlebars::new().render_template(&self.get_template(&template)?, &metadata)?;
+                Ok(body)
+            }
         } else {
-            format!(
-                r#"<article>
-    {}
-    </article>"#,
-                body
-            )
+            Ok(body.to_string())
         }
     }
 }
