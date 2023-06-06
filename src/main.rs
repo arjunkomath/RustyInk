@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::{net::SocketAddr, thread, time::Duration};
 
 use crate::builder::utils::{create_dir_in_path, path_to_string};
-use crate::builder::{Worker, PAGES_DIR, PUBLIC_DIR};
+use crate::builder::{Worker, PAGES_DIR, PUBLIC_DIR, THEME_DIR};
 use anyhow::{Ok, Result};
 use axum::Router;
 use builder::settings::Settings;
@@ -60,14 +60,16 @@ async fn main() -> Result<()> {
             create_dir_in_path(&project_dir)?;
             create_dir_in_path(&project_dir.join(PAGES_DIR))?;
             create_dir_in_path(&project_dir.join(PUBLIC_DIR))?;
+            create_dir_in_path(&project_dir.join(THEME_DIR))?;
 
             let project_dir_path = path_to_string(&project_dir);
+            let theme_dir_path = path_to_string(&project_dir.join(THEME_DIR));
 
             let settings = Settings::new();
             let settings_file = format!("{}/Settings.toml", &project_dir_path);
             fs::write(&settings_file, &settings).unwrap();
 
-            let global_css_file = format!("{}/global.css", &project_dir_path);
+            let global_css_file = format!("{}/global.css", &theme_dir_path);
             let global_css_content = String::from(
                 r#"@import url('https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css');"#,
             );

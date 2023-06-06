@@ -575,6 +575,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "handlebars"
+version = "4.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "83c3372087601b532857d332f5957cbae686da52bb7810bf038c3e3c3cc2fa0d"
+dependencies = [
+ "log",
+ "pest",
+ "pest_derive",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "hashbrown"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1205,6 +1219,7 @@ dependencies = [
  "colored",
  "config",
  "fs_extra",
+ "handlebars",
  "hotwatch",
  "pulldown-cmark",
  "regex",
@@ -1212,7 +1227,6 @@ dependencies = [
  "serde_json",
  "sitewriter",
  "slugify",
- "tinytemplate",
  "tokio",
  "tower-http",
  "walkdir",
@@ -1411,16 +1425,6 @@ dependencies = [
  "libc",
  "wasi 0.10.0+wasi-snapshot-preview1",
  "winapi",
-]
-
-[[package]]
-name = "tinytemplate"
-version = "1.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be4d6b5f19ff7664e8c98d03e2139cb510db9b0a60b55f8e8709b689d939b6bc"
-dependencies = [
- "serde",
- "serde_json",
 ]
 
 [[package]]

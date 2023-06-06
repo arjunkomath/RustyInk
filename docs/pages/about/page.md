@@ -1,4 +1,5 @@
 ---
+template: post
 title: About
 author: Arjun Komath
 author_url: https://twitter.com/arjunz
