@@ -2,12 +2,12 @@ use std::fs;
 
 use super::{
     base,
-    settings::{self, Settings},
+    settings::{self, Settings, SiteMeta},
 };
 use anyhow::Result;
 use config::Config;
-use handlebars::Handlebars;
 use regex::Regex;
+use tinytemplate::TinyTemplate;
 
 pub struct Render {
     pub file: String,
@@ -25,9 +25,12 @@ impl Render {
     }
 
     pub fn render(&self) -> Result<String> {
-        let mut html = base::HEADER.to_owned();
+        let mut tt = TinyTemplate::new();
+        tt.add_template("page_header", base::PAGE_HEADER).unwrap();
 
         let (metadata, body) = self.get_markdown_and_metadata()?;
+
+        let mut html = String::new();
 
         if let Some(metadata) = metadata {
             let metadata: settings::PageMetadata = Config::builder()
@@ -37,15 +40,19 @@ impl Render {
                 .try_deserialize()
                 .unwrap();
 
+            let meta_tags = SiteMeta {
+                title: format!("{} | {}", self.settings.meta.title, metadata.title),
+                description: self.settings.meta.description.clone(),
+            };
+
+            html.push_str(&tt.render("page_header", &meta_tags)?);
             html.push_str(&base::render_article(&body, Some(metadata)).as_str());
         } else {
+            html.push_str(&tt.render("page_header", &self.settings.meta)?);
             html.push_str(&base::render_article(&body, None).as_str());
         }
 
-        html.push_str(base::FOOTER);
-
-        let reg = Handlebars::new();
-        let html = reg.render_template(&html, &self.settings.meta)?;
+        html.push_str(base::PAGE_FOOTER);
 
         let top_navigation = base::render_links(&self.settings.navigation.links);
         let html = html.replace("%%LINKS%%", &top_navigation);
