@@ -1,4 +1,4 @@
-use std::{fs, net::SocketAddr, path::PathBuf};
+use std::{fs, net::SocketAddr, path::PathBuf, process};
 
 use anyhow::Result;
 use axum::Router;
@@ -12,7 +12,29 @@ pub fn create_dir_in_path(path: &PathBuf) -> Result<()> {
 }
 
 pub fn path_to_string(path: &PathBuf) -> String {
-    path.canonicalize().unwrap().to_str().unwrap().to_string()
+    match path.canonicalize() {
+        Ok(path) => match path.to_str() {
+            Some(path) => path.to_string(),
+            None => {
+                println!(
+                    "✘ {}",
+                    "Error: Path is not a valid UTF-8 sequence".bold().red()
+                );
+                process::exit(1);
+            }
+        },
+        _ => {
+            println!(
+                "✘ {}",
+                format!(
+                    "Error: {}",
+                    format!("Path {:?} does not exist", path).bold().red()
+                )
+                .red()
+            );
+            process::exit(1);
+        }
+    }
 }
 
 pub async fn start_dev_server(output_dir: String, port: u16) -> Result<()> {
