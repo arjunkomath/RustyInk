@@ -1,7 +1,9 @@
+use std::env;
 use std::path::PathBuf;
 use std::{net::SocketAddr, thread, time::Duration};
 
 use crate::builder::bootstrap;
+use crate::builder::utils::path_to_string;
 use crate::builder::Worker;
 use anyhow::{Ok, Result};
 use axum::Router;
@@ -76,7 +78,18 @@ async fn main() -> Result<()> {
                 }
             }
         }
-        Commands::Dev { watch, input_dir } => {
+        Commands::Dev { input_dir, watch } => {
+            if path_to_string(&input_dir) == path_to_string(&env::current_dir().unwrap()) {
+                println!(
+                    "{}",
+                    "\nSorry, you cannot use current directory as input directory as output is written to it!"
+                        .red()
+                        .bold()
+                );
+
+                return Ok(());
+            }
+
             let worker = Worker::new(&input_dir);
             let output_dir = worker.get_output_dir().to_string();
             let port = worker.get_settings().dev.port.clone();
