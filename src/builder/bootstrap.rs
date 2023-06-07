@@ -1,7 +1,8 @@
 use std::{
-    fs,
+    format, fs,
     io::Write,
     path::{Path, PathBuf},
+    println,
 };
 
 use super::utils::create_dir_in_path;
@@ -34,6 +35,7 @@ impl GitHubContent {
 #[async_recursion]
 async fn download_folder(
     project_dir: &PathBuf,
+    theme: &str,
     client: &Client,
     owner: &str,
     repo: &str,
@@ -59,14 +61,12 @@ async fn download_folder(
 
     for item in response {
         if item.is_file() {
-            let file_name = item.name;
-            let file_path = project_dir.join(item.path.clone());
+            let file_path = item.path.replace(&theme, project_dir.to_str().unwrap());
 
             let folder = Path::new(&file_path).parent().unwrap();
             let _ = fs::create_dir_all(folder);
 
-            let file = format!("{}/{}", folder.to_str().unwrap(), file_name);
-            println!("Downloading theme file: {}", file);
+            println!("- Creating theme file: {}", file_path.bold().green());
 
             let download_url = format!(
                 "https://raw.githubusercontent.com/{}/{}/master/{}",
@@ -74,7 +74,7 @@ async fn download_folder(
             );
 
             let mut file_response = client.get(download_url).send().await?;
-            let mut file = fs::File::create(file)?;
+            let mut file = fs::File::create(file_path)?;
             while let Some(chunk) = file_response.chunk().await? {
                 file.write_all(&chunk)?;
             }
@@ -82,7 +82,7 @@ async fn download_folder(
             let dir_name = item.name;
             let subfolder_path = format!("{}/{}", folder_path, dir_name);
 
-            download_folder(project_dir, client, owner, repo, &subfolder_path).await?;
+            download_folder(project_dir, theme, client, owner, repo, &subfolder_path).await?;
         }
     }
 
@@ -98,7 +98,7 @@ pub async fn download_theme(project_dir: &PathBuf, theme: &str) -> Result<()> {
 
     println!("- Downloading theme {}", theme.bold().blue());
 
-    download_folder(project_dir, &client, repo_owner, repo_name, theme).await?;
+    download_folder(project_dir, theme, &client, repo_owner, repo_name, theme).await?;
 
     Ok(())
 }
