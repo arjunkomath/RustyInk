@@ -1,16 +1,14 @@
 use std::env;
 use std::path::PathBuf;
-use std::{net::SocketAddr, thread, time::Duration};
+use std::{thread, time::Duration};
 
 use crate::builder::bootstrap;
 use crate::builder::utils::path_to_string;
 use crate::builder::Worker;
 use anyhow::{Ok, Result};
-use axum::Router;
+use builder::utils;
 use clap::{Parser, Subcommand};
 use owo_colors::OwoColorize;
-use tower_http::services::ServeDir;
-use tower_http::trace::TraceLayer;
 
 mod builder;
 
@@ -73,13 +71,15 @@ async fn main() -> Result<()> {
                 _ => {
                     println!(
                         "- Project created in {}",
-                        project_dir.to_str().unwrap().blue().bold()
+                        project_dir.display().blue().bold()
                     );
                 }
             }
         }
         Commands::Dev { input_dir, watch } => {
-            if path_to_string(&input_dir) == path_to_string(&env::current_dir().unwrap()) {
+            if path_to_string(&input_dir)
+                == path_to_string(&env::current_dir().unwrap_or(PathBuf::from(".")))
+            {
                 println!(
                     "{}",
                     "\nSorry, you cannot use current directory as input directory as output is written to it!"
@@ -108,8 +108,8 @@ async fn main() -> Result<()> {
                         hotwatch::Hotwatch::new().expect("hotwatch failed to initialize!");
 
                     println!(
-                        "- Watching for changes in -> {}",
-                        input_dir.to_str().unwrap().blue().bold()
+                        "✔ Watching for changes in -> {}",
+                        input_dir.display().blue().bold()
                     );
                     hotwatch
                         .watch(input_dir, move |_| {
@@ -131,19 +131,15 @@ async fn main() -> Result<()> {
                 });
             }
 
-            let addr = SocketAddr::from(([0, 0, 0, 0], port));
-            println!(
-                "\n- Dev server started on -> {}:{}",
-                "http://localhost".bold(),
-                port
-            );
-
-            let _ = tokio::net::TcpListener::bind(addr).await.unwrap();
-            let app = Router::new().nest_service("/", ServeDir::new(output_dir));
-            axum::Server::bind(&addr)
-                .serve(app.layer(TraceLayer::new_for_http()).into_make_service())
-                .await
-                .unwrap();
+            match utils::start_dev_server(output_dir, port).await {
+                Err(e) => {
+                    println!(
+                        "- Failed to start dev server: {}",
+                        e.to_string().red().bold()
+                    );
+                }
+                _ => {}
+            }
         }
         Commands::Build { input_dir } => {
             let worker = Worker::new(&input_dir);
