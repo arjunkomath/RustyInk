@@ -8,27 +8,6 @@ pub struct Settings {
     pub navigation: NavigationSettings,
 }
 
-impl Settings {
-    pub fn new() -> String {
-        let default_settings = String::from(
-            r#"[dev]
-port = 3000
-
-[meta]
-title = "Rusty!nk"
-description = "Blazing fast static site generator written in Rust"
-
-[navigation]
-links = [
-    { label = "~/", url = "/" },
-    { label = "GitHub", url = "https://github.com/arjunkomath/rustyink" },
-]"#,
-        );
-
-        default_settings
-    }
-}
-
 #[derive(Debug, Clone, Deserialize)]
 pub struct DevSettings {
     pub port: u16,

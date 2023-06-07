@@ -3,7 +3,7 @@ port = 3000
 
 [site]
 code_highlighting = true
-sitemap_base_url = "https://rustyink.techulus.xyz"
+sitemap_base_url = "https://rustyink.cli.rs"
 
 [meta]
 title = "Rusty!nk"

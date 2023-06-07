@@ -1,8 +1,9 @@
 use self::utils::{create_dir_in_path, path_to_string};
 use anyhow::Result;
-use colored::Colorize;
 use config::Config;
 use fs_extra::{copy_items, dir::CopyOptions};
+use minify_html::{minify, Cfg};
+use owo_colors::OwoColorize;
 use slugify::slugify;
 use std::{
     fs,
@@ -11,6 +12,7 @@ use std::{
 use tokio::time::Instant;
 use walkdir::WalkDir;
 
+pub mod bootstrap;
 mod render;
 mod seo;
 pub mod settings;
@@ -135,7 +137,10 @@ impl Worker {
 
             let folder = Path::new(&html_file).parent().unwrap();
             let _ = fs::create_dir_all(folder);
-            fs::write(&html_file, html)?;
+
+            let minified = minify(&html.as_bytes(), &Cfg::new());
+
+            fs::write(&html_file, minified)?;
             all_file_paths.push(html_file);
         }
 

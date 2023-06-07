@@ -1,14 +1,12 @@
-use std::fs;
 use std::path::PathBuf;
 use std::{net::SocketAddr, thread, time::Duration};
 
-use crate::builder::utils::{create_dir_in_path, path_to_string};
-use crate::builder::{Worker, PAGES_DIR, PUBLIC_DIR, THEME_DIR};
+use crate::builder::bootstrap;
+use crate::builder::Worker;
 use anyhow::{Ok, Result};
 use axum::Router;
-use builder::settings::Settings;
 use clap::{Parser, Subcommand};
-use colored::Colorize;
+use owo_colors::OwoColorize;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
@@ -30,6 +28,15 @@ enum Commands {
     New {
         #[clap(required = true, help = "Project directory")]
         project_dir: PathBuf,
+
+        #[clap(
+            required = false,
+            help = "Theme",
+            default_value = "pico",
+            short = 't',
+            long = "theme"
+        )]
+        theme: String,
     },
     /// Start dev mode
     #[command()]
@@ -54,33 +61,20 @@ async fn main() -> Result<()> {
     let args = Cli::parse();
 
     match args.command {
-        Commands::New { project_dir } => {
+        Commands::New { project_dir, theme } => {
             println!("{}...", "\n- Creating new project".bold());
 
-            create_dir_in_path(&project_dir)?;
-            create_dir_in_path(&project_dir.join(PAGES_DIR))?;
-            create_dir_in_path(&project_dir.join(PUBLIC_DIR))?;
-            create_dir_in_path(&project_dir.join(THEME_DIR))?;
-
-            let project_dir_path = path_to_string(&project_dir);
-            let theme_dir_path = path_to_string(&project_dir.join(THEME_DIR));
-
-            let settings = Settings::new();
-            let settings_file = format!("{}/Settings.toml", &project_dir_path);
-            fs::write(&settings_file, &settings).unwrap();
-
-            let global_css_file = format!("{}/global.css", &theme_dir_path);
-            let global_css_content = String::from(
-                r#"@import url('https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css');"#,
-            );
-            fs::write(&global_css_file, global_css_content).unwrap();
-
-            let pages_dir_path = path_to_string(&project_dir.join(PAGES_DIR));
-            let index_file = format!("{}/page.md", &pages_dir_path);
-            let index_content = r#"Hello!"#;
-            fs::write(&index_file, index_content).unwrap();
-
-            println!("{}", "- Done!".bold());
+            match bootstrap::download_theme(&project_dir, &theme).await {
+                Err(e) => {
+                    println!("- {}", e.to_string().red().bold());
+                }
+                _ => {
+                    println!(
+                        "- Project created in {}",
+                        project_dir.to_str().unwrap().blue().bold()
+                    );
+                }
+            }
         }
         Commands::Dev { watch, input_dir } => {
             let worker = Worker::new(&input_dir);
@@ -88,7 +82,12 @@ async fn main() -> Result<()> {
             let port = worker.get_settings().dev.port.clone();
 
             // Trigger a build
-            worker.build().unwrap();
+            match worker.build() {
+                Err(e) => {
+                    println!("- Build failed -> {}", e.to_string().red().bold());
+                }
+                _ => {}
+            }
 
             if watch {
                 tokio::task::spawn_blocking(move || {
@@ -102,7 +101,14 @@ async fn main() -> Result<()> {
                     hotwatch
                         .watch(input_dir, move |_| {
                             println!("\n- {}", "File(s) changed".bold().yellow());
-                            worker.build().unwrap();
+
+                            // Rebuild on changes
+                            match worker.build() {
+                                Err(e) => {
+                                    println!("- Build failed -> {}", e.to_string().red().bold());
+                                }
+                                _ => {}
+                            }
                         })
                         .expect("failed to watch content folder!");
 
@@ -128,7 +134,13 @@ async fn main() -> Result<()> {
         }
         Commands::Build { input_dir } => {
             let worker = Worker::new(&input_dir);
-            worker.build().unwrap();
+
+            match worker.build() {
+                Err(e) => {
+                    println!("- Build failed -> {}", e.to_string().red().bold());
+                }
+                _ => {}
+            }
         }
     }
 

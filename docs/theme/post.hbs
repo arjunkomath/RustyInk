@@ -1,7 +1,8 @@
 <article>
-  {{#if title}}
   <header>
+    {{#if title}}
     <h2>{{title}}</h2>
+    {{/if}}
 
     {{#if author}}
     <p>
@@ -17,7 +18,6 @@
     <p><small>// {{published}}</small></p>
     {{/if}}
   </header>
-  {{/if}}
 
   {{{body}}}
 
