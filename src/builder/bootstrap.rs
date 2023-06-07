@@ -66,7 +66,7 @@ async fn download_folder(
             let folder = Path::new(&file_path).parent().unwrap();
             let _ = fs::create_dir_all(folder);
 
-            println!("- Creating theme file: {}", file_path.bold().green());
+            println!("\tCreating file: {}", file_path.bold().green());
 
             let download_url = format!(
                 "https://raw.githubusercontent.com/{}/{}/master/{}",
