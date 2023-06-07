@@ -122,7 +122,7 @@ impl Worker {
                     .replace(".md", "/index.html")
                     .split("/")
                     .map(|x| {
-                        if x.contains("index") {
+                        if x.contains("index") || x == OUTPUT_DIR {
                             x.to_string()
                         } else {
                             format!("{}", slugify!(x))

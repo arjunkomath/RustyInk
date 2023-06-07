@@ -32,7 +32,7 @@ pub struct PageMetadata {
     pub footnote: Option<String>,
     pub author: Option<String>,
     pub author_link: Option<String>,
-    pub published: Option<String>,
+    pub date_published: Option<String>,
 
     pub body: Option<String>,
 }

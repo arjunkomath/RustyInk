@@ -3,7 +3,7 @@ template: post
 title: About
 author: Arjun Komath
 author_link: https://twitter.com/arjunz
-published: 6 June, 2023
+date_published: 6 June, 2023
 footnote: FYI, you can use Markdown syntax in this page.
 ---
 This is just a test page now, I'll add more content later.
