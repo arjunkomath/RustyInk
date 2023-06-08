@@ -46,12 +46,14 @@ pub fn generate_sitemap_xml(
             .replace(&output_dir, &sitemap_base_url)
             .replace("index.html", "");
 
-        urls.push(UrlEntry {
-            loc: canonical_url.parse().unwrap(),
-            changefreq: Some(ChangeFreq::Weekly),
-            priority: Some(0.8),
-            lastmod: Some(Utc::now()),
-        });
+        if let Ok(canonical_url) = canonical_url.parse() {
+            urls.push(UrlEntry {
+                loc: canonical_url,
+                changefreq: Some(ChangeFreq::Weekly),
+                priority: Some(0.8),
+                lastmod: Some(Utc::now()),
+            });
+        }
     }
 
     let xml = sitewriter::generate_str(&urls);

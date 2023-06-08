@@ -1,12 +1,12 @@
-use std::fs;
+use std::{fs, println, process};
 
 use super::settings::{self, Link};
 use anyhow::Result;
 use config::Config;
 use handlebars::Handlebars;
+use owo_colors::OwoColorize;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-
 pub struct Render {
     pub file: String,
     pub theme_dir: String,
@@ -106,10 +106,26 @@ impl Render {
     fn get_markdown_and_metadata(&self) -> Result<(Option<String>, String)> {
         let markdown = fs::read_to_string(&self.file)?;
 
-        let metadata = Regex::new(r"(?s)---(.*?)---(.*)").unwrap();
+        let metadata = Regex::new(r"(?s)---(.*?)---(.*)").unwrap_or_else(|_| {
+            println!("{}", "Failed to parse metadata".bold().red());
+            process::exit(1);
+        });
+
         if let Some(captures) = metadata.captures(&markdown) {
-            let metadata = captures.get(1).unwrap().as_str();
-            let markdown = captures.get(2).unwrap().as_str();
+            let metadata = captures
+                .get(1)
+                .unwrap_or_else(|| {
+                    println!("{}", "Failed to parse metadata".bold().red());
+                    process::exit(1);
+                })
+                .as_str();
+            let markdown = captures
+                .get(2)
+                .unwrap_or_else(|| {
+                    println!("{}", "Failed to parse metadata".bold().red());
+                    process::exit(1);
+                })
+                .as_str();
 
             let parser = pulldown_cmark::Parser::new_ext(&markdown, pulldown_cmark::Options::all());
             let mut content = String::new();
