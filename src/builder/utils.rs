@@ -1,6 +1,6 @@
-use std::{fs, net::SocketAddr, path::PathBuf, process};
+use std::{fs, net::SocketAddr, path::PathBuf};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use axum::Router;
 use owo_colors::OwoColorize;
 use tower_http::{services::ServeDir, trace::TraceLayer};
@@ -11,30 +11,14 @@ pub fn create_dir_in_path(path: &PathBuf) -> Result<()> {
     Ok(())
 }
 
-pub fn path_to_string(path: &PathBuf) -> String {
-    match path.canonicalize() {
-        Ok(path) => match path.to_str() {
-            Some(path) => path.to_string(),
-            None => {
-                println!(
-                    "✘ {}",
-                    "Error: Path is not a valid UTF-8 sequence".bold().red()
-                );
-                process::exit(1);
-            }
-        },
-        _ => {
-            println!(
-                "✘ {}",
-                format!(
-                    "Error: {}",
-                    format!("Path {:?} does not exist", path).bold().red()
-                )
-                .red()
-            );
-            process::exit(1);
-        }
-    }
+pub fn path_to_string(path: &PathBuf) -> Result<String> {
+    path.canonicalize()
+        .context("Failed to canonicalize path")
+        .and_then(|x| {
+            x.to_str()
+                .context("Failed to parse patht to string")
+                .map(|s| s.to_string())
+        })
 }
 
 pub async fn start_dev_server(output_dir: String, port: u16) -> Result<()> {

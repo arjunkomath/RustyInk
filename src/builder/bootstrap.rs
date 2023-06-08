@@ -96,7 +96,7 @@ async fn download_folder(
 pub async fn download_theme(project_dir: &PathBuf, theme: &str) -> Result<()> {
     create_dir_in_path(&project_dir)?;
 
-    let project_dir = path_to_string(project_dir);
+    let project_dir = path_to_string(project_dir)?;
 
     let client = Client::new();
     let repo_owner = "arjunkomath";
