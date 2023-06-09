@@ -48,10 +48,10 @@ pub fn parse_string_to_yaml(string: &str) -> Result<serde_yaml::Value> {
 pub fn insert_kv_into_yaml(
     yaml: &serde_yaml::Value,
     key: &str,
-    value: &str,
+    value: &serde_yaml::Value,
 ) -> Result<serde_yaml::Value> {
     let mut yaml = yaml.clone();
-    yaml[key] = serde_yaml::Value::String(value.to_string());
+    yaml[key] = value.clone();
 
     Ok(yaml)
 }

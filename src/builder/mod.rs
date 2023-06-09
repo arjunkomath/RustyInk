@@ -1,4 +1,4 @@
-use self::utils::{create_dir_in_path, path_to_string};
+use self::utils::{create_dir_in_path, parse_string_to_yaml, path_to_string};
 use anyhow::{Context, Result};
 use config::Config;
 use fs_extra::{copy_items, dir::CopyOptions};
@@ -106,11 +106,37 @@ impl Worker {
             .map(|e| e.path().display().to_string())
             .collect();
 
-        let mut all_file_paths: Vec<String> = Vec::with_capacity(markdown_files.len());
+        let all_url_paths: Vec<(String, String)> = markdown_files
+            .iter()
+            .map(|x| {
+                let (metadata, _) = render::Render::new(&x, &self.theme_dir, self.get_settings())
+                    .get_markdown_and_metadata()
+                    .unwrap();
+
+                let x = x.replace(&self.pages_dir, "").replace("page.md", "");
+
+                let x = if x.contains(".md") {
+                    let x = x
+                        .replace(".md", "")
+                        .split("/")
+                        .map(|x| format!("{}", slugify!(x)))
+                        .collect::<Vec<String>>()
+                        .join("/");
+                    x
+                } else {
+                    x
+                };
+
+                (x, metadata.unwrap_or("".to_string()))
+            })
+            .filter(|x| x.0 != "/" || x.1 != "")
+            .collect();
+
+        let site_directory = self.generate_site_directory(&all_url_paths)?;
 
         for file in &markdown_files {
-            let html =
-                render::Render::new(&file, &self.theme_dir, self.get_settings()).render_page()?;
+            let html = render::Render::new(&file, &self.theme_dir, self.get_settings())
+                .render_page(&site_directory)?;
 
             let html_file = file
                 .replace(&self.pages_dir, &self.output_dir)
@@ -144,7 +170,6 @@ impl Worker {
             println!("{} {}", "✔ Generated".green(), &html_file);
 
             fs::write(&html_file, minified)?;
-            all_file_paths.push(html_file);
         }
 
         // Handle robots.txt, ignore if there is a file already
@@ -156,18 +181,66 @@ impl Worker {
         }
 
         // Handle sitemap.xml, ignore if there is a file already
-        if !Path::new(&self.output_dir).join("sitemap.xml").exists() {
-            if let Ok(sitemap_xml) =
-                seo::generate_sitemap_xml(&self.get_settings(), &self.output_dir, &all_file_paths)
-            {
-                println!("{} sitemap.xml", "✔ Generated".green());
-                fs::write(Path::new(&self.output_dir).join("sitemap.xml"), sitemap_xml)?;
-            }
-        }
+        // if !Path::new(&self.output_dir).join("sitemap.xml").exists() {
+        //     if let Ok(sitemap_xml) = seo::generate_sitemap_xml(&self.get_settings(), &all_url_paths)
+        //     {
+        //         println!("{} sitemap.xml", "✔ Generated".green());
+        //         fs::write(Path::new(&self.output_dir).join("sitemap.xml"), sitemap_xml)?;
+        //     }
+        // }
 
         let elapsed_time = start_time.elapsed();
         println!("✔ Completed in: {:?}", elapsed_time);
 
         Ok(())
+    }
+
+    pub fn generate_site_directory(
+        &self,
+        url_paths: &Vec<(String, String)>,
+    ) -> Result<serde_yaml::Value> {
+        let mut yaml = serde_yaml::Mapping::new();
+
+        for (url_path, metadata) in url_paths {
+            let mut current_yaml = &mut yaml;
+            let mut url_path = url_path.split('/').collect::<Vec<&str>>();
+            let last = url_path.pop().unwrap();
+
+            for path in url_path {
+                if !current_yaml.contains_key(&serde_yaml::Value::String(path.to_string())) {
+                    current_yaml.insert(
+                        serde_yaml::Value::String(path.to_string()),
+                        serde_yaml::Value::Mapping(serde_yaml::Mapping::new()),
+                    );
+                }
+
+                current_yaml = match current_yaml
+                    .get_mut(&serde_yaml::Value::String(path.to_string()))
+                {
+                    Some(x) => match x {
+                        serde_yaml::Value::Mapping(x) => x,
+                        _ => {
+                            println!("{}: {}", "Failed to parse yaml".red(), "Invalid yaml".red());
+                            std::process::exit(1);
+                        }
+                    },
+                    None => {
+                        println!("{}: {}", "Failed to parse yaml".red(), "Invalid yaml".red());
+                        std::process::exit(1);
+                    }
+                };
+            }
+
+            if let Ok(metadata) = parse_string_to_yaml(&metadata) {
+                current_yaml.insert(serde_yaml::Value::String(last.to_string()), metadata);
+            } else {
+                current_yaml.insert(
+                    serde_yaml::Value::String(last.to_string()),
+                    serde_yaml::Value::Null,
+                );
+            }
+        }
+
+        Ok(serde_yaml::Value::Mapping(yaml))
     }
 }

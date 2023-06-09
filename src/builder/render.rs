@@ -35,14 +35,14 @@ impl Render {
         }
     }
 
-    pub fn render_page(&self) -> Result<String> {
+    pub fn render_page(&self, site_directory: &serde_yaml::Value) -> Result<String> {
         let (metadata, markdown) = self.get_markdown_and_metadata()?;
 
         let content = if let Some(metadata) = metadata {
             let metadata = parse_string_to_yaml(&metadata)?;
 
             let content = self
-                .render_body(&markdown, metadata)
+                .render_body(&markdown, &metadata, site_directory)
                 .with_context(|| format!("Failed to render page: {}", self.file))?;
 
             content
@@ -82,7 +82,7 @@ impl Render {
         Ok(styles)
     }
 
-    fn get_markdown_and_metadata(&self) -> Result<(Option<String>, String)> {
+    pub fn get_markdown_and_metadata(&self) -> Result<(Option<String>, String)> {
         let markdown = fs::read_to_string(&self.file)?;
 
         let metadata = Regex::new(r"(?s)---(.*?)---(.*)")
@@ -112,16 +112,28 @@ impl Render {
         }
     }
 
-    fn render_body(&self, body: &str, metadata: serde_yaml::Value) -> Result<String> {
+    fn render_body(
+        &self,
+        body: &str,
+        metadata: &serde_yaml::Value,
+        site_directory: &serde_yaml::Value,
+    ) -> Result<String> {
         let template = if let Some(template) = metadata.get("template") {
             let template = template
                 .as_str()
                 .with_context(|| format!("Failed to get template from metadata: {}", self.file))?;
 
-            let metadata_with_body = insert_kv_into_yaml(&metadata, "body", &body)?;
+            let metadata = insert_kv_into_yaml(
+                &metadata,
+                "body",
+                &serde_yaml::Value::String(body.to_string()),
+            )?;
+            let metadata = insert_kv_into_yaml(&metadata, "root", &site_directory[""])?;
 
-            let body = Handlebars::new()
-                .render_template(&self.get_template(&template)?, &metadata_with_body)?;
+            println!("{}", serde_json::to_string_pretty(&metadata)?);
+
+            let body =
+                Handlebars::new().render_template(&self.get_template(&template)?, &metadata)?;
 
             Ok(body)
         } else {
