@@ -6,14 +6,14 @@ use sitewriter::{ChangeFreq, UrlEntry};
 pub fn generate_robots_txt(settings: &Settings) -> Result<String> {
     let blocked = settings.get_site_settings().is_search_engine_blocked();
 
-    let sitemap_base_url = settings
-        .get_site_settings()
-        .get_sitemap_base_url()
-        .context("No sitemap base url found in Settings.toml")?;
-
     let robots = if blocked {
         String::from("User-agent: *\nDisallow: /")
     } else {
+        let sitemap_base_url = settings
+            .get_site_settings()
+            .get_sitemap_base_url()
+            .context("No sitemap base url found in Settings.toml")?;
+
         String::from("User-agent: *\nAllow: /\nSitemap: ")
             + &sitemap_base_url
             + &String::from("/sitemap.xml")
@@ -26,14 +26,16 @@ pub fn generate_sitemap_xml(
     settings: &Settings,
     output_dir: &str,
     all_file_paths: &Vec<String>,
-) -> Result<Option<String>> {
+) -> Result<String> {
     let sitemap_base_url = settings
         .get_site_settings()
         .get_sitemap_base_url()
         .context("No sitemap base url found in Settings.toml")?;
 
     if sitemap_base_url.is_empty() {
-        return Ok(None);
+        return Err(anyhow::anyhow!(
+            "No sitemap base url found in Settings.toml"
+        ));
     }
 
     let mut urls = vec![];
@@ -55,5 +57,5 @@ pub fn generate_sitemap_xml(
 
     let xml = sitewriter::generate_str(&urls);
 
-    Ok(Some(xml))
+    Ok(xml)
 }

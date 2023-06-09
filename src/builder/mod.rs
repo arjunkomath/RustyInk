@@ -141,6 +141,8 @@ impl Worker {
 
             let minified = minify(&html.as_bytes(), &Cfg::new());
 
+            println!("{} {}", "✔ Generated".green(), &html_file);
+
             fs::write(&html_file, minified)?;
             all_file_paths.push(html_file);
         }
@@ -148,6 +150,7 @@ impl Worker {
         // Handle robots.txt, ignore if there is a file already
         if !Path::new(&self.output_dir).join("robots.txt").exists() {
             if let Ok(robots_txt) = seo::generate_robots_txt(&self.get_settings()) {
+                println!("{} robots.txt", "✔ Generated".green());
                 fs::write(Path::new(&self.output_dir).join("robots.txt"), robots_txt)?;
             }
         }
@@ -157,9 +160,8 @@ impl Worker {
             if let Ok(sitemap_xml) =
                 seo::generate_sitemap_xml(&self.get_settings(), &self.output_dir, &all_file_paths)
             {
-                if let Some(sitemap_xml) = sitemap_xml {
-                    fs::write(Path::new(&self.output_dir).join("sitemap.xml"), sitemap_xml)?;
-                }
+                println!("{} sitemap.xml", "✔ Generated".green());
+                fs::write(Path::new(&self.output_dir).join("sitemap.xml"), sitemap_xml)?;
             }
         }
 

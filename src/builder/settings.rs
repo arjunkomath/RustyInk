@@ -34,6 +34,13 @@ pub struct SiteSettings {
 }
 
 impl SiteSettings {
+    pub fn is_search_engine_blocked(&self) -> bool {
+        match self.block_search_indexing {
+            Some(true) => true,
+            _ => false,
+        }
+    }
+
     pub fn get_sitemap_base_url(&self) -> Option<String> {
         match &self.sitemap_base_url {
             Some(url) => Some(url.clone()),
@@ -41,8 +48,8 @@ impl SiteSettings {
         }
     }
 
-    pub fn is_search_engine_blocked(&self) -> bool {
-        match self.block_search_indexing {
+    pub fn is_code_highlighting_enabled(&self) -> bool {
+        match self.code_highlighting {
             Some(true) => true,
             _ => false,
         }
