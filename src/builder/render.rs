@@ -1,8 +1,10 @@
 use std::fs;
 
-use super::settings::{self, Link};
+use super::{
+    settings::{self, Link},
+    utils::{insert_kv_into_yaml, parse_string_to_yaml},
+};
 use anyhow::{Context, Result};
-use config::Config;
 use handlebars::Handlebars;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -24,31 +26,6 @@ struct RenderData {
     content: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PageMetadata {
-    pub template: Option<String>,
-
-    pub title: Option<String>,
-    pub footnote: Option<String>,
-    pub author: Option<String>,
-    pub author_link: Option<String>,
-    pub date_published: Option<String>,
-
-    pub body: Option<String>,
-}
-
-impl PageMetadata {
-    pub fn from_yaml_string(metadata: String) -> Result<Self> {
-        let metadata: PageMetadata = Config::builder()
-            .add_source(config::File::from_str(&metadata, config::FileFormat::Yaml))
-            .build()
-            .context("Failed to parse metadata")
-            .and_then(|r| r.try_deserialize().context("Failed to parse metadata"))?;
-
-        Ok(Self { ..metadata })
-    }
-}
-
 impl Render {
     pub fn new(file: &str, theme_dir: &str, settings: settings::Settings) -> Self {
         Self {
@@ -62,7 +39,7 @@ impl Render {
         let (metadata, markdown) = self.get_markdown_and_metadata()?;
 
         let content = if let Some(metadata) = metadata {
-            let metadata: PageMetadata = PageMetadata::from_yaml_string(metadata)?;
+            let metadata = parse_string_to_yaml(&metadata)?;
 
             let content = self
                 .render_body(&markdown, metadata)
@@ -135,23 +112,22 @@ impl Render {
         }
     }
 
-    fn render_body(&self, body: &str, metadata: PageMetadata) -> Result<String> {
-        let template = metadata
-            .template
-            .clone()
-            .context("Failed to get template")?;
+    fn render_body(&self, body: &str, metadata: serde_yaml::Value) -> Result<String> {
+        let template = if let Some(template) = metadata.get("template") {
+            let template = template
+                .as_str()
+                .with_context(|| format!("Failed to get template from metadata: {}", self.file))?;
 
-        if template.is_empty() {
-            Ok(body.to_string())
-        } else {
-            let body = Handlebars::new().render_template(
-                &self.get_template(&template)?,
-                &PageMetadata {
-                    body: Some(body.to_string()),
-                    ..metadata
-                },
-            )?;
+            let metadata_with_body = insert_kv_into_yaml(&metadata, "body", &body)?;
+
+            let body = Handlebars::new()
+                .render_template(&self.get_template(&template)?, &metadata_with_body)?;
+
             Ok(body)
-        }
+        } else {
+            Ok(body.to_string())
+        };
+
+        template
     }
 }

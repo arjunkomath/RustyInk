@@ -39,3 +39,19 @@ pub async fn start_dev_server(output_dir: String, port: u16) -> Result<()> {
 
     Ok(())
 }
+
+pub fn parse_string_to_yaml(string: &str) -> Result<serde_yaml::Value> {
+    let metadata: serde_yaml::Value = serde_yaml::from_str(string)?;
+    Ok(metadata)
+}
+
+pub fn insert_kv_into_yaml(
+    yaml: &serde_yaml::Value,
+    key: &str,
+    value: &str,
+) -> Result<serde_yaml::Value> {
+    let mut yaml = yaml.clone();
+    yaml[key] = serde_yaml::Value::String(value.to_string());
+
+    Ok(yaml)
+}
