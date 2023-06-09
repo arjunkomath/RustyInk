@@ -77,9 +77,7 @@ async fn main() -> Result<()> {
             }
         }
         Commands::Dev { input_dir, watch } => {
-            if path_to_string(&input_dir)?
-                == path_to_string(&env::current_dir().unwrap_or(PathBuf::from(".")))?
-            {
+            if path_to_string(&input_dir)? == path_to_string(&env::current_dir()?)? {
                 println!(
                     "{}",
                     "\nSorry, you cannot use current directory as input directory as output is written to it!"

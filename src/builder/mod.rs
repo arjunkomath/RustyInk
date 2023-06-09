@@ -1,5 +1,5 @@
 use self::utils::{create_dir_in_path, path_to_string};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use config::Config;
 use fs_extra::{copy_items, dir::CopyOptions};
 use minify_html::{minify, Cfg};
@@ -134,14 +134,9 @@ impl Worker {
                 html_file
             };
 
-            let folder = Path::new(&html_file).parent().unwrap_or_else(|| {
-                println!(
-                    "{}: {}",
-                    "Failed to create folder for generated file, ".red(),
-                    &html_file
-                );
-                std::process::exit(1);
-            });
+            let folder = Path::new(&html_file)
+                .parent()
+                .context("Failed to get parent folder")?;
             let _ = fs::create_dir_all(folder);
 
             let minified = minify(&html.as_bytes(), &Cfg::new());

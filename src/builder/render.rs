@@ -1,10 +1,9 @@
-use std::{fs, println, process};
+use std::fs;
 
 use super::settings::{self, Link};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use config::Config;
 use handlebars::Handlebars;
-use owo_colors::OwoColorize;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 pub struct Render {
@@ -38,15 +37,14 @@ pub struct PageMetadata {
 }
 
 impl PageMetadata {
-    pub fn from_yaml_string(metadata: String) -> Self {
+    pub fn from_yaml_string(metadata: String) -> Result<Self> {
         let metadata: PageMetadata = Config::builder()
             .add_source(config::File::from_str(&metadata, config::FileFormat::Yaml))
             .build()
-            .unwrap()
-            .try_deserialize()
-            .unwrap();
+            .context("Failed to parse metadata")
+            .and_then(|r| r.try_deserialize().context("Failed to parse metadata"))?;
 
-        Self { ..metadata }
+        Ok(Self { ..metadata })
     }
 }
 
@@ -63,11 +61,11 @@ impl Render {
         let (metadata, markdown) = self.get_markdown_and_metadata()?;
 
         let content = if let Some(metadata) = metadata {
-            let metadata: PageMetadata = PageMetadata::from_yaml_string(metadata);
+            let metadata: PageMetadata = PageMetadata::from_yaml_string(metadata)?;
 
             let content = self
                 .render_body(&markdown, metadata)
-                .unwrap_or(String::new());
+                .with_context(|| format!("Failed to render page: {}", self.file))?;
 
             content
         } else {
@@ -106,25 +104,17 @@ impl Render {
     fn get_markdown_and_metadata(&self) -> Result<(Option<String>, String)> {
         let markdown = fs::read_to_string(&self.file)?;
 
-        let metadata = Regex::new(r"(?s)---(.*?)---(.*)").unwrap_or_else(|_| {
-            println!("{}", "Failed to parse metadata".bold().red());
-            process::exit(1);
-        });
+        let metadata = Regex::new(r"(?s)---(.*?)---(.*)")
+            .context("Failed to parse metadata from markdown file")?;
 
         if let Some(captures) = metadata.captures(&markdown) {
             let metadata = captures
                 .get(1)
-                .unwrap_or_else(|| {
-                    println!("{}", "Failed to parse metadata".bold().red());
-                    process::exit(1);
-                })
+                .with_context(|| format!("Failed to get metadata from captures: {}", self.file))?
                 .as_str();
             let markdown = captures
                 .get(2)
-                .unwrap_or_else(|| {
-                    println!("{}", "Failed to parse metadata".bold().red());
-                    process::exit(1);
-                })
+                .with_context(|| format!("Failed to get markdown from captures: {}", self.file))?
                 .as_str();
 
             let parser = pulldown_cmark::Parser::new_ext(&markdown, pulldown_cmark::Options::all());
@@ -142,7 +132,10 @@ impl Render {
     }
 
     fn render_body(&self, body: &str, metadata: PageMetadata) -> Result<String> {
-        let template = metadata.template.clone().unwrap_or(String::new());
+        let template = metadata
+            .template
+            .clone()
+            .context("Failed to get template")?;
 
         if template.is_empty() {
             Ok(body.to_string())

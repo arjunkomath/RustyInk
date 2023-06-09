@@ -8,7 +8,7 @@ use std::{
 use crate::builder::utils::path_to_string;
 
 use super::utils::create_dir_in_path;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use async_recursion::async_recursion;
 use owo_colors::OwoColorize;
 use reqwest::{
@@ -65,9 +65,9 @@ async fn download_folder(
         if item.is_file() {
             let file_path = item.path.replace(&theme, project_dir);
 
-            let folder = Path::new(&file_path).parent().unwrap_or_else(|| {
-                panic!("Failed to access folder of file {}", file_path.bold().red())
-            });
+            let folder = Path::new(&file_path)
+                .parent()
+                .context("Failed to get parent folder")?;
             let _ = fs::create_dir_all(folder);
 
             println!("\tDownloading file: {}", item.path.bold().green());

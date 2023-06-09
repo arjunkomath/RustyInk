@@ -1,18 +1,15 @@
 use super::settings::Settings;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use chrono::prelude::*;
 use sitewriter::{ChangeFreq, UrlEntry};
 
 pub fn generate_robots_txt(settings: &Settings) -> Result<String> {
-    let blocked = match settings.site.as_ref() {
-        Some(site) => site.block_search_indexing.unwrap_or(false),
-        None => false,
-    };
+    let blocked = settings.get_site_settings().is_search_engine_blocked();
 
-    let sitemap_base_url = match settings.site.as_ref() {
-        Some(site) => site.sitemap_base_url.clone().unwrap_or(String::new()),
-        None => String::new(),
-    };
+    let sitemap_base_url = settings
+        .get_site_settings()
+        .get_sitemap_base_url()
+        .context("No sitemap base url found in Settings.toml")?;
 
     let robots = if blocked {
         String::from("User-agent: *\nDisallow: /")
@@ -30,10 +27,10 @@ pub fn generate_sitemap_xml(
     output_dir: &str,
     all_file_paths: &Vec<String>,
 ) -> Result<Option<String>> {
-    let sitemap_base_url = match settings.site.as_ref() {
-        Some(site) => site.sitemap_base_url.clone().unwrap_or(String::new()),
-        None => String::new(),
-    };
+    let sitemap_base_url = settings
+        .get_site_settings()
+        .get_sitemap_base_url()
+        .context("No sitemap base url found in Settings.toml")?;
 
     if sitemap_base_url.is_empty() {
         return Ok(None);
