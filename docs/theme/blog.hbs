@@ -2,11 +2,11 @@
 
 <ul>
   {{#each root.blog}}
-  {{#if @key}}
-  <hgroup>
-    <h1><a href="{{@key}}">{{this.title}}</a></h1>
-    <h2>{{this.author}}</h2>
-  </hgroup>
-  {{/if}}
+    {{#if (not (eq @key "_self"))}}
+      <hgroup>
+        <h4><a href="{{@key}}">{{this.title}}</a></h4>
+        <h2>{{this.author}}</h2>
+      </hgroup>
+    {{/if}}
   {{/each}}
 </ul>

@@ -106,12 +106,12 @@ impl Worker {
             .map(|e| e.path().display().to_string())
             .collect();
 
-        let all_url_paths: Vec<(String, String)> = markdown_files
+        let all_pages_with_metadata: Vec<(String, String)> = markdown_files
             .iter()
             .map(|x| {
-                let (metadata, _) = render::Render::new(&x, &self.theme_dir, self.get_settings())
-                    .get_markdown_and_metadata()
-                    .unwrap();
+                let metadata = render::Render::new(&x, &self.theme_dir, self.get_settings())
+                    .get_metadata()
+                    .unwrap_or(None);
 
                 let x = x.replace(&self.pages_dir, "").replace("page.md", "");
 
@@ -132,7 +132,7 @@ impl Worker {
             .filter(|x| x.0 != "/" || x.1 != "")
             .collect();
 
-        let site_directory = self.generate_site_directory(&all_url_paths)?;
+        let site_directory = self.generate_site_directory(&all_pages_with_metadata)?;
 
         for file in &markdown_files {
             let html = render::Render::new(&file, &self.theme_dir, self.get_settings())
@@ -181,13 +181,14 @@ impl Worker {
         }
 
         // Handle sitemap.xml, ignore if there is a file already
-        // if !Path::new(&self.output_dir).join("sitemap.xml").exists() {
-        //     if let Ok(sitemap_xml) = seo::generate_sitemap_xml(&self.get_settings(), &all_url_paths)
-        //     {
-        //         println!("{} sitemap.xml", "✔ Generated".green());
-        //         fs::write(Path::new(&self.output_dir).join("sitemap.xml"), sitemap_xml)?;
-        //     }
-        // }
+        if !Path::new(&self.output_dir).join("sitemap.xml").exists() {
+            if let Ok(sitemap_xml) =
+                seo::generate_sitemap_xml(&self.get_settings(), &all_pages_with_metadata)
+            {
+                println!("{} sitemap.xml", "✔ Generated".green());
+                fs::write(Path::new(&self.output_dir).join("sitemap.xml"), sitemap_xml)?;
+            }
+        }
 
         let elapsed_time = start_time.elapsed();
         println!("✔ Completed in: {:?}", elapsed_time);
@@ -203,10 +204,16 @@ impl Worker {
 
         for (url_path, metadata) in url_paths {
             let mut current_yaml = &mut yaml;
+
             let mut url_path = url_path.split('/').collect::<Vec<&str>>();
-            let last = url_path.pop().unwrap();
+            let last = url_path.pop().unwrap_or("_self");
+            let last = if last.is_empty() { "_self" } else { last };
 
             for path in url_path {
+                if path.is_empty() {
+                    continue;
+                }
+
                 if !current_yaml.contains_key(&serde_yaml::Value::String(path.to_string())) {
                     current_yaml.insert(
                         serde_yaml::Value::String(path.to_string()),

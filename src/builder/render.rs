@@ -70,6 +70,24 @@ impl Render {
         Ok(html)
     }
 
+    pub fn get_metadata(&self) -> Result<Option<String>> {
+        let markdown = fs::read_to_string(&self.file)?;
+
+        let metadata = Regex::new(r"(?s)---(.*?)---")
+            .context("Failed to parse metadata from markdown file")?;
+
+        if let Some(captures) = metadata.captures(&markdown) {
+            let metadata = captures
+                .get(1)
+                .with_context(|| format!("Failed to get metadata from captures: {}", self.file))?
+                .as_str();
+
+            Ok(Some(metadata.to_string()))
+        } else {
+            Ok(None)
+        }
+    }
+
     fn get_template(&self, name: &str) -> Result<String> {
         let template = fs::read_to_string(format!("{}/{}.hbs", self.theme_dir, name))?;
 
@@ -82,7 +100,7 @@ impl Render {
         Ok(styles)
     }
 
-    pub fn get_markdown_and_metadata(&self) -> Result<(Option<String>, String)> {
+    fn get_markdown_and_metadata(&self) -> Result<(Option<String>, String)> {
         let markdown = fs::read_to_string(&self.file)?;
 
         let metadata = Regex::new(r"(?s)---(.*?)---(.*)")
@@ -128,9 +146,9 @@ impl Render {
                 "body",
                 &serde_yaml::Value::String(body.to_string()),
             )?;
-            let metadata = insert_kv_into_yaml(&metadata, "root", &site_directory[""])?;
+            let metadata = insert_kv_into_yaml(&metadata, "root", &site_directory)?;
 
-            println!("{}", serde_json::to_string_pretty(&metadata)?);
+            // println!("{}", serde_json::to_string_pretty(&metadata)?);
 
             let body =
                 Handlebars::new().render_template(&self.get_template(&template)?, &metadata)?;

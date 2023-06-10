@@ -22,7 +22,10 @@ pub fn generate_robots_txt(settings: &Settings) -> Result<String> {
     Ok(robots)
 }
 
-pub fn generate_sitemap_xml(settings: &Settings, all_url_paths: &Vec<String>) -> Result<String> {
+pub fn generate_sitemap_xml(
+    settings: &Settings,
+    all_url_paths: &Vec<(String, String)>,
+) -> Result<String> {
     let sitemap_base_url = settings
         .get_site_settings()
         .get_sitemap_base_url()
@@ -36,7 +39,7 @@ pub fn generate_sitemap_xml(settings: &Settings, all_url_paths: &Vec<String>) ->
 
     let mut urls = vec![];
 
-    for file in all_url_paths {
+    for (file, _) in all_url_paths {
         let canonical_url = format!("{}{}", sitemap_base_url, file);
 
         if let Ok(canonical_url) = canonical_url.parse() {

@@ -3,4 +3,4 @@ template: blog
 title: Blog
 ---
 
-# ~/blog
+### ~/rustyink/blog
