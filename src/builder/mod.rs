@@ -4,6 +4,7 @@ use config::Config;
 use fs_extra::{copy_items, dir::CopyOptions};
 use minify_html::{minify, Cfg};
 use owo_colors::OwoColorize;
+use rayon::prelude::*;
 use slugify::slugify;
 use std::{
     fs,
@@ -107,7 +108,7 @@ impl Worker {
             .collect();
 
         let all_pages_with_metadata: Vec<(String, String)> = markdown_files
-            .iter()
+            .par_iter()
             .map(|x| {
                 let metadata = render::Render::new(&x, &self.theme_dir, self.get_settings())
                     .get_metadata()
@@ -134,43 +135,11 @@ impl Worker {
 
         let site_directory = self.generate_site_directory(&all_pages_with_metadata)?;
 
-        for file in &markdown_files {
-            let html = render::Render::new(&file, &self.theme_dir, self.get_settings())
-                .render_page(&site_directory)?;
-
-            let html_file = file
-                .replace(&self.pages_dir, &self.output_dir)
-                .replace("page.md", "index.html");
-
-            let html_file = if html_file.contains(".md") {
-                let html_file = html_file
-                    .replace(".md", "/index.html")
-                    .split("/")
-                    .map(|x| {
-                        if x.contains("index") || x == OUTPUT_DIR {
-                            x.to_string()
-                        } else {
-                            format!("{}", slugify!(x))
-                        }
-                    })
-                    .collect::<Vec<String>>()
-                    .join("/");
-                html_file
-            } else {
-                html_file
-            };
-
-            let folder = Path::new(&html_file)
-                .parent()
-                .context("Failed to get parent folder")?;
-            let _ = fs::create_dir_all(folder);
-
-            let minified = minify(&html.as_bytes(), &Cfg::new());
-
-            println!("{} {}", "✔ Generated".green(), &html_file);
-
-            fs::write(&html_file, minified)?;
-        }
+        markdown_files.par_iter().for_each(|file| {
+            if let Err(e) = self.process_file(file, &site_directory) {
+                println!("{}: {}", "Failed to process file, ".red(), e);
+            }
+        });
 
         // Handle robots.txt, ignore if there is a file already
         if !Path::new(&self.output_dir).join("robots.txt").exists() {
@@ -192,6 +161,46 @@ impl Worker {
 
         let elapsed_time = start_time.elapsed();
         println!("✔ Completed in: {:?}", elapsed_time);
+
+        Ok(())
+    }
+
+    fn process_file(&self, file: &str, site_directory: &serde_yaml::Value) -> Result<()> {
+        let html = render::Render::new(&file, &self.theme_dir, self.get_settings())
+            .render_page(&site_directory)?;
+
+        let html_file = file
+            .replace(&self.pages_dir, &self.output_dir)
+            .replace("page.md", "index.html");
+
+        let html_file = if html_file.contains(".md") {
+            let html_file = html_file
+                .replace(".md", "/index.html")
+                .split("/")
+                .map(|x| {
+                    if x.contains("index") || x == OUTPUT_DIR {
+                        x.to_string()
+                    } else {
+                        format!("{}", slugify!(x))
+                    }
+                })
+                .collect::<Vec<String>>()
+                .join("/");
+            html_file
+        } else {
+            html_file
+        };
+
+        let folder = Path::new(&html_file)
+            .parent()
+            .context("Failed to get parent folder")?;
+        let _ = fs::create_dir_all(folder);
+
+        let minified = minify(&html.as_bytes(), &Cfg::new());
+
+        println!("{} {}", "✔ Generated".green(), &html_file);
+
+        let _ = fs::write(&html_file, minified)?;
 
         Ok(())
     }
