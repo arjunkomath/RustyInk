@@ -60,6 +60,16 @@ impl SiteSettings {
 pub struct SiteMeta {
     pub title: String,
     pub description: String,
+    pub og_image_url: Option<String>,
+}
+
+impl SiteMeta {
+    pub fn get_og_image_url(&self) -> Option<String> {
+        match &self.og_image_url {
+            Some(url) => Some(url.clone()),
+            None => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]

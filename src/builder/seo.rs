@@ -61,10 +61,9 @@ pub fn generate_open_graph_tags(settings: &Settings) -> Result<String> {
     let title = settings.meta.title.clone();
     let description = settings.meta.description.clone();
 
-    let sitemap_base_url = settings.get_site_settings().get_sitemap_base_url();
-
     let mut tags = vec![];
 
+    // Primary meta tags
     tags.push(format!(
         "<meta property=\"og:title\" content=\"{}\" />",
         title
@@ -75,6 +74,9 @@ pub fn generate_open_graph_tags(settings: &Settings) -> Result<String> {
     ));
 
     // Open Graph / Facebook
+    tags.push(String::from(
+        "<meta property=\"og:type\" content=\"website\" />",
+    ));
     tags.push(format!(
         "<meta property=\"og:title\" content=\"{}\" />",
         title
@@ -94,7 +96,7 @@ pub fn generate_open_graph_tags(settings: &Settings) -> Result<String> {
         description
     ));
 
-    if let Some(sitemap_base_url) = sitemap_base_url {
+    if let Some(sitemap_base_url) = settings.get_site_settings().get_sitemap_base_url() {
         tags.push(format!(
             "<meta property=\"og:url\" content=\"{}\" />",
             sitemap_base_url
@@ -102,6 +104,20 @@ pub fn generate_open_graph_tags(settings: &Settings) -> Result<String> {
         tags.push(format!(
             "<meta name=\"twitter:url\" content=\"{}\" />",
             sitemap_base_url
+        ));
+    }
+
+    if let Some(og_image_url) = settings.meta.get_og_image_url() {
+        tags.push(format!(
+            "<meta property=\"og:image\" content=\"{}\" />",
+            og_image_url
+        ));
+        tags.push(format!(
+            "<meta name=\"twitter:image\" content=\"{}\" />",
+            og_image_url
+        ));
+        tags.push(String::from(
+            "<meta name=\"twitter:card\" content=\"summary_large_image\" />",
         ));
     }
 
