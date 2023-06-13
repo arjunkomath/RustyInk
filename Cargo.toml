@@ -1,6 +1,6 @@
 [package]
 name = "rustyink"
-version = "0.0.6"
+version = "0.0.7"
 edition = "2021"
 description = "Blazing fast static site generator"
 authors = ["Arjun Komath <arjunkomath@gmail.com>"]
