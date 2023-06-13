@@ -64,6 +64,11 @@ pub fn generate_open_graph_tags(settings: &Settings) -> Result<String> {
     let mut tags = vec![];
 
     // Primary meta tags
+    tags.push(format!("<meta property=\"title\" content=\"{}\" />", title));
+    tags.push(format!(
+        "<meta name=\"description\" content=\"{}\" />",
+        description
+    ));
     tags.push(format!(
         "<meta property=\"og:title\" content=\"{}\" />",
         title
