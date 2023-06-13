@@ -56,3 +56,21 @@ pub fn generate_sitemap_xml(
 
     Ok(xml)
 }
+
+pub fn generate_open_graph_tags(settings: &Settings) -> Result<String> {
+    let title = settings.meta.title.clone();
+    let description = settings.meta.description.clone();
+
+    let mut tags = vec![];
+
+    tags.push(format!(
+        "<meta property=\"og:title\" content=\"{}\" />",
+        title
+    ));
+    tags.push(format!(
+        "<meta property=\"og:description\" content=\"{}\" />",
+        description
+    ));
+
+    Ok(tags.join("\n"))
+}
