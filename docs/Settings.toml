@@ -8,6 +8,7 @@ sitemap_base_url = "https://rustyink.cli.rs"
 [meta]
 title = "~/Rusty!nk"
 description = "Blazing fast static site generator written in Rust"
+og_image_url = "https://rustyink.cli.rs/images/og.png"
 
 [navigation]
 links = [
