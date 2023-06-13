@@ -2,7 +2,6 @@ use self::utils::{create_dir_in_path, parse_string_to_yaml, path_to_string};
 use anyhow::{Context, Result};
 use config::Config;
 use fs_extra::{copy_items, dir::CopyOptions};
-use minify_html::{minify, Cfg};
 use owo_colors::OwoColorize;
 use rayon::prelude::*;
 use slugify::slugify;
@@ -196,11 +195,9 @@ impl Worker {
             .context("Failed to get parent folder")?;
         let _ = fs::create_dir_all(folder);
 
-        let minified = minify(&html.as_bytes(), &Cfg::new());
-
         println!("{} {}", "✔ Generated".green(), &html_file);
 
-        let _ = fs::write(&html_file, minified)?;
+        let _ = fs::write(&html_file, &html)?;
 
         Ok(())
     }
