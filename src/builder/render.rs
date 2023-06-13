@@ -1,6 +1,7 @@
 use std::fs;
 
 use super::{
+    seo::generate_open_graph_tags,
     settings::{self, Link},
     utils::{insert_kv_into_yaml, parse_string_to_yaml},
 };
@@ -17,13 +18,16 @@ pub struct Render {
 
 #[derive(Serialize, Deserialize)]
 struct RenderData {
-    meta_title: String,
-    meta_description: String,
+    title: String,
+    description: String,
+    open_graph_tags: String,
     styles: String,
-    links: Vec<Link>,
-    code_highlighting: bool,
 
+    links: Vec<Link>,
     content: String,
+    page_metadata: Option<serde_yaml::Value>,
+
+    code_highlighting: bool,
 }
 
 impl Render {
@@ -38,9 +42,14 @@ impl Render {
     pub fn render_page(&self, site_directory: &serde_yaml::Value) -> Result<String> {
         let (metadata, markdown) = self.get_markdown_and_metadata()?;
 
-        let content = if let Some(metadata) = metadata {
+        let metadata = if let Some(metadata) = metadata {
             let metadata = parse_string_to_yaml(&metadata)?;
+            Some(metadata)
+        } else {
+            None
+        };
 
+        let content = if let Some(metadata) = &metadata {
             let content = self
                 .render_body(&markdown, &metadata, site_directory)
                 .with_context(|| format!("Failed to render page: {}", self.file))?;
@@ -55,8 +64,9 @@ impl Render {
         let html = Handlebars::new().render_template(
             &self.get_template("app")?,
             &RenderData {
-                meta_title: self.settings.meta.title.clone(),
-                meta_description: self.settings.meta.description.clone(),
+                title: self.settings.meta.title.clone(),
+                description: self.settings.meta.description.clone(),
+                open_graph_tags: generate_open_graph_tags(&self.settings)?,
                 content,
                 styles,
                 links: self.settings.navigation.links.clone(),
@@ -64,6 +74,7 @@ impl Render {
                     .settings
                     .get_site_settings()
                     .is_code_highlighting_enabled(),
+                page_metadata: metadata,
             },
         )?;
 

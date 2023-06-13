@@ -6,7 +6,7 @@ code_highlighting = true
 sitemap_base_url = "https://rustyink.cli.rs"
 
 [meta]
-title = "Rusty!nk"
+title = "~/Rusty!nk"
 description = "Blazing fast static site generator written in Rust"
 
 [navigation]

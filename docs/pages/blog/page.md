@@ -1,6 +1,4 @@
 ---
 template: blog
-title: Blog
+title: ~/Rusty!nk/blog
 ---
-
-### ~/rustyink/blog

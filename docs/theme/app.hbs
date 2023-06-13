@@ -1,56 +1,79 @@
-<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <meta name="description" content="{meta_description}" />
-  
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    {{{open_graph_tags}}}
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
 
     {{#if code_highlighting}}
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css" integrity="sha512-Jk4AqjWsdSzSWCSuQTfYRIF84Rq/eV0G2+tu07byYwHcbTGfdmLrHjUSwvzp5HvbiqK4ibmNwdcG49Y5RGYPTg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+      <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css"
+        integrity="sha512-Jk4AqjWsdSzSWCSuQTfYRIF84Rq/eV0G2+tu07byYwHcbTGfdmLrHjUSwvzp5HvbiqK4ibmNwdcG49Y5RGYPTg=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+      />
     {{/if}}
 
     <style>
       {{{styles}}}
     </style>
 
-    <title>{{meta_title}}</title>
+    <title>{{title}}</title>
   </head>
 
   <body>
     <main class="container">
 
-    <nav>
+      <nav>
         <ul>
           {{#each links}}
             <li><a href="{{this.url}}">{{this.label}}</a></li>
           {{/each}}
         </ul>
-    </nav>
+      </nav>
 
-    <hgroup>
-      <h1>{{meta_title}}</h1>
-      <h2>{{meta_description}}</h2>
-    </hgroup>
+      <hgroup>
+        {{#if page_metadata.title}}
+          <h1>{{page_metadata.title}}</h1>
+          <h2>{{page_metadata.description}}</h2>
+        {{else}}
+          <h1>{{title}}</h1>
+          <h2>{{description}}</h2>
+        {{/if}}
+      </hgroup>
 
-    {{{content}}}
+      {{{content}}}
 
     </main>
-    
+
     {{#if code_highlighting}}
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"
+      <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"
         integrity="sha512-rdhY3cbXURo13l/WU9VlaRyaIYeJ/KBakckXIvJNAQde8DgpOmE+eZf7ha4vdqVjTtwQt69bD2wH2LXob/LB7Q=="
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+      ></script>
       <script type="text/javascript">hljs.highlightAll();</script>
     {{/if}}
   </body>
 
   <footer class="container">
     <small>
-      Built with <a href="https://rustyink.cli.rs" target="_blank" rel="noopener noreferrer">Rusty!nk</a> •
-      <a target="_blank" rel="noopener noreferrer" href="https://github.com/arjunkomath/rustyink">
+      Built with
+      <a
+        href="https://rustyink.cli.rs"
+        target="_blank"
+        rel="noopener noreferrer"
+      >Rusty!nk</a>
+      •
+      <a
+        target="_blank"
+        rel="noopener noreferrer"
+        href="https://github.com/arjunkomath/rustyink"
+      >
         Source code
       </a>
     </small>
