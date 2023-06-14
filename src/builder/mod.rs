@@ -29,12 +29,12 @@ pub struct Worker {
     public_dir: String,
     theme_dir: String,
     output_dir: String,
-    cache: cache::Cache,
     config_file: String,
+    cache: Option<cache::Cache>,
 }
 
 impl Worker {
-    pub fn new(input_dir: &Path, cache: cache::Cache) -> Result<Self> {
+    pub fn new(input_dir: &Path, cache: Option<cache::Cache>) -> Result<Self> {
         let output_dir = OUTPUT_DIR;
         let pages_dir = path_to_string(&input_dir.join(PAGES_DIR))?;
         let public_dir = path_to_string(&input_dir.join(PUBLIC_DIR))?;

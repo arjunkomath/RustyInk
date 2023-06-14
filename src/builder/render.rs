@@ -18,7 +18,7 @@ pub struct Render {
     file: String,
     theme_dir: String,
     settings: settings::Settings,
-    cache: cache::Cache,
+    cache: Option<cache::Cache>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -39,7 +39,7 @@ impl Render {
         file: &str,
         theme_dir: &str,
         settings: settings::Settings,
-        cache: cache::Cache,
+        cache: Option<cache::Cache>,
     ) -> Self {
         Self {
             file: file.to_string(),

@@ -58,8 +58,9 @@ pub fn insert_kv_into_yaml(
     Ok(yaml)
 }
 
-pub fn download_url_as_string(url: &str, cache: Cache) -> Result<String> {
-    if let Some(content) = cache.get(url) {
+pub fn download_url_as_string(url: &str, cache: Option<Cache>) -> Result<String> {
+    let content = cache.as_ref().and_then(|c| c.get(url));
+    if let Some(content) = content {
         return Ok(content);
     }
 
@@ -67,7 +68,9 @@ pub fn download_url_as_string(url: &str, cache: Cache) -> Result<String> {
     let response = client.get(url).send()?;
     let content = response.text()?;
 
-    cache.set(url, content.as_str())?;
+    if let Some(cache) = &cache {
+        cache.set(url, content.as_str())?;
+    }
 
     Ok(content)
 }
