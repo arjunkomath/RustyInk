@@ -8,7 +8,9 @@ use tower_http::{services::ServeDir, trace::TraceLayer};
 use super::cache::Cache;
 
 pub fn create_dir_in_path(path: &PathBuf) -> Result<()> {
-    fs::create_dir(path)?;
+    if fs::metadata(path).is_err() {
+        fs::create_dir(path)?;
+    }
 
     Ok(())
 }

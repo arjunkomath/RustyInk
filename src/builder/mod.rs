@@ -41,6 +41,8 @@ impl Worker {
         let theme_dir = path_to_string(&input_dir.join(THEME_DIR))?;
         let config_file = path_to_string(&input_dir.join("Settings.toml"))?;
 
+        create_dir_in_path(&PathBuf::from(output_dir))?;
+
         Ok(Self {
             output_dir: output_dir.to_string(),
             pages_dir,
