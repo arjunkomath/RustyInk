@@ -55,6 +55,9 @@ enum Commands {
         #[clap(required = true, help = "Input directory")]
         input_dir: PathBuf,
     },
+    /// Clean the site
+    #[command()]
+    Clean {},
 }
 
 #[tokio::main]
@@ -65,9 +68,6 @@ async fn main() -> Result<()> {
         ProjectDirs::from("rs", "cli", "RustyInk").context("Failed to get project directories")?;
     let cache_dir = project_dirs.cache_dir().to_string_lossy().to_string();
     let cache = cache::Cache::new(cache_dir)?;
-
-    // Start with a clean cache
-    cache.clean()?;
 
     match args.command {
         Commands::New { project_dir, theme } => {
@@ -145,6 +145,9 @@ async fn main() -> Result<()> {
             if let Err(e) = worker.build() {
                 println!("- Build failed -> {}", e.to_string().red().bold());
             }
+        }
+        Commands::Clean {} => {
+            cache.clean().context("Failed to clean cache")?;
         }
     }
 

@@ -15,9 +15,9 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 pub struct Render {
-    pub file: String,
-    pub theme_dir: String,
-    pub settings: settings::Settings,
+    file: String,
+    theme_dir: String,
+    settings: settings::Settings,
     cache: cache::Cache,
 }
 
