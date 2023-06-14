@@ -1,7 +1,7 @@
 use std::{fs, path::Path};
 
 use anyhow::Result;
-use md5;
+use md5::{Digest, Md5};
 
 #[derive(Debug, Clone)]
 pub struct Cache {
@@ -14,7 +14,9 @@ impl Cache {
     }
 
     pub fn get_cache_file_path(&self, key: &str) -> String {
-        let key = md5::compute(key);
+        let mut hasher = Md5::new();
+        hasher.update(key);
+        let key = hasher.finalize();
         let key = format!("{:x}", key);
         format!("{}/{}.txt", self.cache_dir, key)
     }

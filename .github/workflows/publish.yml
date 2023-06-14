@@ -34,7 +34,7 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Build
-        run: RUST_LOG=info cargo run build docs
+        run: cargo run build docs
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
