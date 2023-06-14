@@ -1,7 +1,3 @@
-[![crates.io](https://img.shields.io/crates/v/rustyink)](https://crates.io/crates/rustyink)
-[![Build & test](https://github.com/arjunkomath/RustyInk/actions/workflows/build_test.yml/badge.svg)](https://github.com/arjunkomath/RustyInk/actions/workflows/build_test.yml)
-[![Publish to Pages](https://github.com/arjunkomath/RustyInk/actions/workflows/publish.yml/badge.svg)](https://github.com/arjunkomath/RustyInk/actions/workflows/publish.yml)
-
 > 🚧 This project is currently under development. Expect breaking changes. 🚧
 
 A sleek and minimalist static site generator written in Rust. Designed with simplicity in mind, RustyInk makes website creation a breeze.
