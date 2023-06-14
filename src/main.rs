@@ -99,14 +99,11 @@ async fn main() -> Result<()> {
 
             let worker = Worker::new(&input_dir, cache)?;
             let output_dir = worker.get_output_dir().to_string();
-            let port = worker.get_settings().dev.port.clone();
+            let port = worker.get_settings().dev.port;
 
             // Trigger a build
-            match worker.build() {
-                Err(e) => {
-                    println!("- Build failed -> {}", e.to_string().red().bold());
-                }
-                _ => {}
+            if let Err(e) = worker.build() {
+                println!("- Build failed -> {}", e.to_string().red().bold());
             }
 
             if watch {
@@ -123,11 +120,8 @@ async fn main() -> Result<()> {
                             println!("\n- {}", "File(s) changed".bold().yellow());
 
                             // Rebuild on changes
-                            match worker.build() {
-                                Err(e) => {
-                                    println!("- Build failed -> {}", e.to_string().red().bold());
-                                }
-                                _ => {}
+                            if let Err(e) = worker.build() {
+                                println!("- Build failed -> {}", e.to_string().red().bold());
                             }
                         })
                         .expect("failed to watch content folder!");
@@ -138,24 +132,18 @@ async fn main() -> Result<()> {
                 });
             }
 
-            match utils::start_dev_server(output_dir, port).await {
-                Err(e) => {
-                    println!(
-                        "- Failed to start dev server: {}",
-                        e.to_string().red().bold()
-                    );
-                }
-                _ => {}
+            if let Err(e) = utils::start_dev_server(output_dir, port).await {
+                println!(
+                    "- Failed to start dev server: {}",
+                    e.to_string().red().bold()
+                );
             }
         }
         Commands::Build { input_dir } => {
             let worker = Worker::new(&input_dir, cache)?;
 
-            match worker.build() {
-                Err(e) => {
-                    println!("- Build failed -> {}", e.to_string().red().bold());
-                }
-                _ => {}
+            if let Err(e) = worker.build() {
+                println!("- Build failed -> {}", e.to_string().red().bold());
             }
         }
     }

@@ -34,7 +34,7 @@ pub struct Worker {
 }
 
 impl Worker {
-    pub fn new(input_dir: &PathBuf, cache: cache::Cache) -> Result<Self> {
+    pub fn new(input_dir: &Path, cache: cache::Cache) -> Result<Self> {
         let output_dir = OUTPUT_DIR;
         let pages_dir = path_to_string(&input_dir.join(PAGES_DIR))?;
         let public_dir = path_to_string(&input_dir.join(PUBLIC_DIR))?;
@@ -43,10 +43,10 @@ impl Worker {
 
         Ok(Self {
             output_dir: output_dir.to_string(),
-            pages_dir: pages_dir.to_string(),
-            public_dir: public_dir.to_string(),
-            theme_dir: theme_dir.to_string(),
-            config_file: config_file.to_string(),
+            pages_dir,
+            public_dir,
+            theme_dir,
+            config_file,
             cache,
         })
     }
@@ -240,21 +240,14 @@ impl Worker {
                     );
                 }
 
-                current_yaml = match current_yaml
-                    .get_mut(&serde_yaml::Value::String(path.to_string()))
-                {
-                    Some(x) => match x {
-                        serde_yaml::Value::Mapping(x) => x,
+                current_yaml =
+                    match current_yaml.get_mut(&serde_yaml::Value::String(path.to_string())) {
+                        Some(serde_yaml::Value::Mapping(x)) => x,
                         _ => {
                             println!("{}: {}", "Failed to parse yaml".red(), "Invalid yaml".red());
                             std::process::exit(1);
                         }
-                    },
-                    None => {
-                        println!("{}: {}", "Failed to parse yaml".red(), "Invalid yaml".red());
-                        std::process::exit(1);
-                    }
-                };
+                    };
             }
 
             if let Ok(metadata) = parse_string_to_yaml(metadata) {

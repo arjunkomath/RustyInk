@@ -8,7 +8,7 @@ use tower_http::{services::ServeDir, trace::TraceLayer};
 use super::cache::Cache;
 
 pub fn create_dir_in_path(path: &PathBuf) -> Result<()> {
-    fs::create_dir(&path)?;
+    fs::create_dir(path)?;
 
     Ok(())
 }
@@ -60,7 +60,7 @@ pub fn insert_kv_into_yaml(
 
 pub fn download_url_as_string(url: &str, cache: Cache) -> Result<String> {
     if let Some(content) = cache.get(url) {
-        return Ok(content.to_string());
+        return Ok(content);
     }
 
     let client = reqwest::blocking::Client::new();

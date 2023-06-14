@@ -35,10 +35,7 @@ pub struct SiteSettings {
 
 impl SiteSettings {
     pub fn is_search_engine_blocked(&self) -> bool {
-        match self.block_search_indexing {
-            Some(true) => true,
-            _ => false,
-        }
+        matches!(self.block_search_indexing, Some(true))
     }
 
     pub fn get_script_urls(&self) -> Vec<String> {
@@ -66,17 +63,11 @@ pub struct SiteMeta {
 
 impl SiteMeta {
     pub fn get_og_image_url(&self) -> Option<String> {
-        match &self.og_image_url {
-            Some(url) => Some(url.clone()),
-            None => None,
-        }
+        self.og_image_url.as_ref().cloned()
     }
 
     pub fn get_base_url(&self) -> Option<String> {
-        match &self.base_url {
-            Some(url) => Some(url.clone()),
-            None => None,
-        }
+        self.base_url.as_ref().cloned()
     }
 }
 

@@ -35,7 +35,6 @@ impl Cache {
     pub fn get(&self, key: &str) -> Option<String> {
         let file_path = self.get_cache_file_path(key);
         if let Ok(contents) = fs::read_to_string(file_path) {
-            println!("{} {}", "✔ Loaded", key);
             Some(contents)
         } else {
             None
