@@ -2,6 +2,7 @@ use self::utils::{create_dir_in_path, parse_string_to_yaml, path_to_string};
 use anyhow::{Context, Result};
 use config::Config;
 use fs_extra::{copy_items, dir::CopyOptions};
+use html_minifier::HTMLMinifier;
 use owo_colors::OwoColorize;
 use rayon::prelude::*;
 use slugify::slugify;
@@ -212,7 +213,9 @@ impl Worker {
 
         println!("{} {}", "✔ Generated".green(), &html_file);
 
-        fs::write(&html_file, html)?;
+        let mut html_minifier = HTMLMinifier::new();
+        html_minifier.digest(&html)?;
+        fs::write(&html_file, html_minifier.get_html())?;
 
         Ok(())
     }
