@@ -5,9 +5,10 @@ use std::{thread, time::Duration};
 use crate::builder::bootstrap;
 use crate::builder::utils::path_to_string;
 use crate::builder::Worker;
-use anyhow::{Ok, Result};
-use builder::utils;
+use anyhow::{Context, Ok, Result};
+use builder::{cache, utils};
 use clap::{Parser, Subcommand};
+use directories::ProjectDirs;
 use owo_colors::OwoColorize;
 
 mod builder;
@@ -60,6 +61,14 @@ enum Commands {
 async fn main() -> Result<()> {
     let args = Cli::parse();
 
+    let project_dirs =
+        ProjectDirs::from("rs", "cli", "RustyInk").context("Failed to get project directories")?;
+    let cache_dir = project_dirs.cache_dir().to_string_lossy().to_string();
+    let cache = cache::Cache::new(cache_dir)?;
+
+    // Start with a clean cache
+    cache.clean()?;
+
     match args.command {
         Commands::New { project_dir, theme } => {
             println!("{}...", "\n- Creating new project".bold());
@@ -88,7 +97,7 @@ async fn main() -> Result<()> {
                 return Ok(());
             }
 
-            let worker = Worker::new(&input_dir)?;
+            let worker = Worker::new(&input_dir, cache)?;
             let output_dir = worker.get_output_dir().to_string();
             let port = worker.get_settings().dev.port.clone();
 
@@ -140,7 +149,7 @@ async fn main() -> Result<()> {
             }
         }
         Commands::Build { input_dir } => {
-            let worker = Worker::new(&input_dir)?;
+            let worker = Worker::new(&input_dir, cache)?;
 
             match worker.build() {
                 Err(e) => {

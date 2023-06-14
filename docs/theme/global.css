@@ -1,23 +1,20 @@
-@import url('https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css');
-@import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;700&display=swap');
-
 :root {
   --spacing: 0.75rem;
 }
 
-[data-theme=light],
-:root:not([data-theme=dark]) {
-  --font-family: 'Fira Sans', sans-serif;
+[data-theme="light"],
+:root:not([data-theme="dark"]) {
+  --font-family: "Fira Sans", sans-serif;
   --card-background-color: var(--background-color);
   --card-box-shadow: none;
 }
 
 article {
-  padding: calc(var(--block-spacing-vertical)/2) 0;
+  padding: calc(var(--block-spacing-vertical) / 2) 0;
 }
 
-article>header>h2,
-article>header>p {
+article > header > h2,
+article > header > p {
   margin-bottom: 0;
 }
 

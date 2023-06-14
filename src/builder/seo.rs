@@ -10,8 +10,8 @@ pub fn generate_robots_txt(settings: &Settings) -> Result<String> {
         String::from("User-agent: *\nDisallow: /")
     } else {
         let sitemap_base_url = settings
-            .get_site_settings()
-            .get_sitemap_base_url()
+            .meta
+            .get_base_url()
             .context("No sitemap base url found in Settings.toml")?;
 
         String::from("User-agent: *\nAllow: /\nSitemap: ")
@@ -27,8 +27,8 @@ pub fn generate_sitemap_xml(
     all_url_paths: &Vec<(String, String)>,
 ) -> Result<String> {
     let sitemap_base_url = settings
-        .get_site_settings()
-        .get_sitemap_base_url()
+        .meta
+        .get_base_url()
         .context("No sitemap base url found in Settings.toml")?;
 
     if sitemap_base_url.is_empty() {
@@ -101,14 +101,14 @@ pub fn generate_open_graph_tags(settings: &Settings) -> Result<String> {
         description
     ));
 
-    if let Some(sitemap_base_url) = settings.get_site_settings().get_sitemap_base_url() {
+    if let Some(base_url) = settings.meta.get_base_url() {
         tags.push(format!(
             "<meta property=\"og:url\" content=\"{}\" />",
-            sitemap_base_url
+            base_url
         ));
         tags.push(format!(
             "<meta name=\"twitter:url\" content=\"{}\" />",
-            sitemap_base_url
+            base_url
         ));
     }
 

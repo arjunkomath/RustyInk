@@ -14,8 +14,8 @@ impl Settings {
             Some(site) => site.clone(),
             None => SiteSettings {
                 block_search_indexing: Some(false),
-                sitemap_base_url: None,
-                code_highlighting: Some(false),
+                script_urls: Some(Vec::<String>::new()),
+                style_urls: Some(Vec::<String>::new()),
             },
         }
     }
@@ -29,8 +29,8 @@ pub struct DevSettings {
 #[derive(Debug, Clone, Deserialize)]
 pub struct SiteSettings {
     pub block_search_indexing: Option<bool>,
-    pub sitemap_base_url: Option<String>,
-    pub code_highlighting: Option<bool>,
+    pub script_urls: Option<Vec<String>>,
+    pub style_urls: Option<Vec<String>>,
 }
 
 impl SiteSettings {
@@ -41,17 +41,17 @@ impl SiteSettings {
         }
     }
 
-    pub fn get_sitemap_base_url(&self) -> Option<String> {
-        match &self.sitemap_base_url {
-            Some(url) => Some(url.clone()),
-            None => None,
+    pub fn get_script_urls(&self) -> Vec<String> {
+        match &self.script_urls {
+            Some(urls) => urls.clone(),
+            None => Vec::<String>::new(),
         }
     }
 
-    pub fn is_code_highlighting_enabled(&self) -> bool {
-        match self.code_highlighting {
-            Some(true) => true,
-            _ => false,
+    pub fn get_style_urls(&self) -> Vec<String> {
+        match &self.style_urls {
+            Some(urls) => urls.clone(),
+            None => Vec::<String>::new(),
         }
     }
 }
@@ -61,11 +61,19 @@ pub struct SiteMeta {
     pub title: String,
     pub description: String,
     pub og_image_url: Option<String>,
+    pub base_url: Option<String>,
 }
 
 impl SiteMeta {
     pub fn get_og_image_url(&self) -> Option<String> {
         match &self.og_image_url {
+            Some(url) => Some(url.clone()),
+            None => None,
+        }
+    }
+
+    pub fn get_base_url(&self) -> Option<String> {
+        match &self.base_url {
             Some(url) => Some(url.clone()),
             None => None,
         }

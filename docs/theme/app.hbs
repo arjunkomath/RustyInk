@@ -7,16 +7,6 @@
 
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
 
-    {{#if code_highlighting}}
-      <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css"
-        integrity="sha512-Jk4AqjWsdSzSWCSuQTfYRIF84Rq/eV0G2+tu07byYwHcbTGfdmLrHjUSwvzp5HvbiqK4ibmNwdcG49Y5RGYPTg=="
-        crossorigin="anonymous"
-        referrerpolicy="no-referrer"
-      />
-    {{/if}}
-
     <style>
       {{{styles}}}
     </style>
@@ -49,15 +39,8 @@
 
     </main>
 
-    {{#if code_highlighting}}
-      <script
-        src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"
-        integrity="sha512-rdhY3cbXURo13l/WU9VlaRyaIYeJ/KBakckXIvJNAQde8DgpOmE+eZf7ha4vdqVjTtwQt69bD2wH2LXob/LB7Q=="
-        crossorigin="anonymous"
-        referrerpolicy="no-referrer"
-      ></script>
-      <script type="text/javascript">hljs.highlightAll();</script>
-    {{/if}}
+    <script type="text/javascript">{{{scripts}}}</script>
+    <script type="text/javascript">hljs.highlightAll();</script>
   </body>
 
   <footer class="container">

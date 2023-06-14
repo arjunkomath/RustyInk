@@ -5,6 +5,8 @@ use axum::Router;
 use owo_colors::OwoColorize;
 use tower_http::{services::ServeDir, trace::TraceLayer};
 
+use super::cache::Cache;
+
 pub fn create_dir_in_path(path: &PathBuf) -> Result<()> {
     fs::create_dir(&path)?;
 
@@ -13,7 +15,7 @@ pub fn create_dir_in_path(path: &PathBuf) -> Result<()> {
 
 pub fn path_to_string(path: &PathBuf) -> Result<String> {
     path.canonicalize()
-        .context("Failed to canonicalize path")
+        .with_context(|| format!("Failed to canonicalize path: {:?}", path))
         .and_then(|x| {
             x.to_str()
                 .context("Failed to parse patht to string")
@@ -54,4 +56,18 @@ pub fn insert_kv_into_yaml(
     yaml[key] = value.clone();
 
     Ok(yaml)
+}
+
+pub fn download_url_as_string(url: &str, cache: Cache) -> Result<String> {
+    if let Some(content) = cache.get(url) {
+        return Ok(content.to_string());
+    }
+
+    let client = reqwest::blocking::Client::new();
+    let response = client.get(url).send()?;
+    let content = response.text()?;
+
+    cache.set(url, content.as_str())?;
+
+    Ok(content)
 }

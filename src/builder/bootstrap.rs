@@ -63,12 +63,12 @@ async fn download_folder(
 
     for item in response {
         if item.is_file() {
-            let file_path = item.path.replace(&theme, project_dir);
+            let file_path = item.path.replace(theme, project_dir);
 
             let folder = Path::new(&file_path)
                 .parent()
                 .context("Failed to get parent folder")?;
-            let _ = fs::create_dir_all(folder);
+            fs::create_dir_all(folder)?;
 
             println!("\tDownloading file: {}", item.path.bold().green());
 
@@ -94,7 +94,7 @@ async fn download_folder(
 }
 
 pub async fn download_theme(project_dir: &PathBuf, theme: &str) -> Result<()> {
-    create_dir_in_path(&project_dir)?;
+    create_dir_in_path(project_dir)?;
 
     let project_dir = path_to_string(project_dir)?;
 
