@@ -28,7 +28,6 @@ rustyink new <folder> -t pico
 
 - [x] Markdown support
 - [x] Custom themes
-- [x] Syntax highlighting
 - [x] SEO
 - [x] Custom metadata passthrough
 
@@ -36,18 +35,18 @@ rustyink new <folder> -t pico
 
 The following folder structure is expected by RustyInk:
 
-```
+```markdown
 docs/
 ├─ public/
 ├─ pages/
-│  ├─ page.md
-│  ├─ path/
-│  │  ├─ page.md
-│  │  ├─ custom-url.md
+│ ├─ page.md
+│ ├─ path/
+│ │ ├─ page.md
+│ │ ├─ custom-url.md
 ├─ theme/
-│  ├─ global.css
-│  ├─ app.hbs
-│  ├─ custom-template.hbs
+│ ├─ global.css
+│ ├─ app.hbs
+│ ├─ custom-template.hbs
 ├─ Settings.toml
 ```
 

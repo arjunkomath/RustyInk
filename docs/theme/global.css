@@ -21,3 +21,12 @@ article > header > p {
 blockquote p {
   margin: 0;
 }
+
+pre {
+  padding: 0 !important;
+}
+
+code {
+  font-family: "Fira Code", monospace !important;
+  font-size: 0.8rem !important;
+}

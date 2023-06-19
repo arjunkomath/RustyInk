@@ -34,7 +34,6 @@ rustyink new <folder> -t pico
 
 - [x] Markdown support
 - [x] Custom themes
-- [x] Syntax highlighting
 - [x] SEO
 - [x] Custom metadata passthrough
 

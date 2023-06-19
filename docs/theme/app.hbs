@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -13,6 +12,10 @@
     </style>
 
     <title>{{title}}</title>
+    <script defer type="module">
+      import flamethrower from '/flamethrower.js'; flamethrower({ prefetch:
+      'visible', log: true });
+    </script>
   </head>
 
   <body>
@@ -39,27 +42,31 @@
       {{{content}}}
 
     </main>
-
-    <script type="text/javascript">{{{scripts}}}</script>
-    <script type="text/javascript">hljs.highlightAll();</script>
+    <footer class="container">
+      <small>
+        Built with
+        <a
+          href="https://rustyink.cli.rs"
+          target="_blank"
+          rel="noopener noreferrer"
+        >Rusty!nk</a>
+        •
+        <a
+          target="_blank"
+          rel="noopener noreferrer"
+          href="https://github.com/arjunkomath/rustyink"
+        >
+          Source code
+        </a>
+      </small>
+    </footer>
   </body>
 
-  <footer class="container">
-    <small>
-      Built with
-      <a
-        href="https://rustyink.cli.rs"
-        target="_blank"
-        rel="noopener noreferrer"
-      >Rusty!nk</a>
-      •
-      <a
-        target="_blank"
-        rel="noopener noreferrer"
-        href="https://github.com/arjunkomath/rustyink"
-      >
-        Source code
-      </a>
-    </small>
-  </footer>
+  <script type="text/javascript">{{{scripts}}}</script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"
+  ></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"
+  ></script>
 </html>

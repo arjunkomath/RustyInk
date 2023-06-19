@@ -5,6 +5,7 @@ port = 3000
 script_urls = []
 style_urls = [
   'https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css',
+  'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css'
 ]
 
 [meta]
