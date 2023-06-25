@@ -1,6 +1,6 @@
 use std::env;
 use std::path::PathBuf;
-use std::{thread, time::Duration};
+use std::time::Duration;
 
 use crate::builder::bootstrap;
 use crate::builder::utils::path_to_string;
@@ -9,6 +9,8 @@ use anyhow::{Context, Ok, Result};
 use builder::{cache, utils};
 use clap::{Parser, Subcommand};
 use directories::ProjectDirs;
+use notify::RecursiveMode;
+use notify_debouncer_mini::new_debouncer;
 use owo_colors::OwoColorize;
 
 mod builder;
@@ -108,26 +110,29 @@ async fn main() -> Result<()> {
 
             if watch {
                 tokio::task::spawn_blocking(move || {
-                    let mut hotwatch =
-                        hotwatch::Hotwatch::new().expect("hotwatch failed to initialize!");
-
                     println!(
                         "✔ Watching for changes in -> {}",
                         input_dir.display().blue().bold()
                     );
-                    hotwatch
-                        .watch(input_dir, move |_| {
-                            println!("\n- {}", "File(s) changed".bold().yellow());
 
-                            // Rebuild on changes
-                            if let Err(e) = worker.build() {
-                                println!("- Build failed -> {}", e.to_string().red().bold());
+                    let (tx, rx) = std::sync::mpsc::channel();
+                    let mut debouncer = new_debouncer(Duration::from_secs(1), None, tx).unwrap();
+                    debouncer
+                        .watcher()
+                        .watch(input_dir.as_path(), RecursiveMode::Recursive)
+                        .expect("Failed to watch content folder!");
+
+                    for result in rx {
+                        match result {
+                            Err(errors) => errors.iter().for_each(|error| println!("{error:?}")),
+                            _ => {
+                                println!("{}", "\n✔ Changes detected, rebuilding...".cyan());
+                                /* Ok is not working here for some reason */
+                                if let Err(e) = worker.build() {
+                                    println!("- Build failed -> {}", e.to_string().red().bold());
+                                }
                             }
-                        })
-                        .expect("failed to watch content folder!");
-
-                    loop {
-                        thread::sleep(Duration::from_secs(1));
+                        }
                     }
                 });
             }
