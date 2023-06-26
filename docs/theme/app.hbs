@@ -62,6 +62,25 @@
     </footer>
   </body>
 
+  <script type="module">
+    const socket = new WebSocket('ws://127.0.0.1:3001');
+
+    socket.addEventListener('open', () => {
+      console.log('WebSocket connection established.');
+    });
+
+    socket.addEventListener('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+
+    socket.addEventListener('message', function (event) {
+      console.log('Message from server: ', event.data);
+      if (event.data === 'reload') {
+        window.location.reload();
+      }
+    });
+  </script>
+
   <script type="text/javascript">{{{scripts}}}</script>
   <script
     src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"

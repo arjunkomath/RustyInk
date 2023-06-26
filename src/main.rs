@@ -1,19 +1,29 @@
-use std::env;
+use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::Duration;
+use std::{env, println};
 
 use crate::builder::bootstrap;
 use crate::builder::utils::path_to_string;
 use crate::builder::Worker;
-use anyhow::{Context, Ok, Result};
+use anyhow::{Context, Result};
 use builder::{cache, utils};
 use clap::{Parser, Subcommand};
 use directories::ProjectDirs;
+use futures_util::stream::SplitSink;
+use futures_util::{SinkExt, StreamExt};
 use notify::RecursiveMode;
 use notify_debouncer_mini::new_debouncer;
 use owo_colors::OwoColorize;
+use tokio::net::{TcpListener, TcpStream};
+use tokio::sync::Mutex;
+use tokio_tungstenite::tungstenite::Message;
+use tokio_tungstenite::{accept_async, tungstenite, WebSocketStream};
 
 mod builder;
+
+type Clients = Arc<Mutex<HashMap<String, SplitSink<WebSocketStream<TcpStream>, Message>>>>;
 
 #[derive(Debug, Parser)]
 #[command(name = "rustyink")]
@@ -108,40 +118,22 @@ async fn main() -> Result<()> {
                 println!("- Build failed -> {}", e.to_string().red().bold());
             }
 
+            // Start dev server
+            tokio::task::spawn(utils::start_dev_server(output_dir, port));
+
             if watch {
-                tokio::task::spawn_blocking(move || {
-                    println!(
-                        "✔ Watching for changes in -> {}",
-                        input_dir.display().blue().bold()
-                    );
+                let clients: Clients = Arc::new(Mutex::new(HashMap::new()));
 
-                    let (tx, rx) = std::sync::mpsc::channel();
-                    let mut debouncer = new_debouncer(Duration::from_secs(1), None, tx).unwrap();
-                    debouncer
-                        .watcher()
-                        .watch(input_dir.as_path(), RecursiveMode::Recursive)
-                        .expect("Failed to watch content folder!");
+                tokio::spawn(handle_file_changes(input_dir, worker, clients.clone()));
 
-                    for result in rx {
-                        match result {
-                            Err(errors) => errors.iter().for_each(|error| println!("{error:?}")),
-                            _ => {
-                                println!("{}", "\n✔ Changes detected, rebuilding...".cyan());
-                                /* Ok is not working here for some reason */
-                                if let Err(e) = worker.build() {
-                                    println!("- Build failed -> {}", e.to_string().red().bold());
-                                }
-                            }
-                        }
-                    }
-                });
-            }
+                let addr = "127.0.0.1:3001".to_string();
+                println!("✔ Listening socket connections on {}", addr.blue().bold());
 
-            if let Err(e) = utils::start_dev_server(output_dir, port).await {
-                println!(
-                    "- Failed to start dev server: {}",
-                    e.to_string().red().bold()
-                );
+                let listener = TcpListener::bind(&addr).await?;
+
+                while let Ok((stream, _)) = listener.accept().await {
+                    tokio::spawn(accept_connection(stream, clients.clone()));
+                }
             }
         }
         Commands::Build { input_dir } => {
@@ -153,6 +145,62 @@ async fn main() -> Result<()> {
         }
         Commands::Clean {} => {
             cache.clean().context("Failed to clean cache")?;
+        }
+    }
+
+    Ok(())
+}
+
+async fn accept_connection(stream: TcpStream, clients: Clients) -> Result<()> {
+    let addr = stream
+        .peer_addr()
+        .expect("connected streams should have a peer address");
+    println!("Peer address: {}", addr);
+
+    let ws_stream = accept_async(stream).await?;
+
+    let (write, _) = ws_stream.split();
+
+    clients.lock().await.insert(addr.to_string(), write);
+
+    // write
+    //     .send(tungstenite::Message::Text("hello".to_string()))
+    //     .await?;
+
+    Ok(())
+}
+
+async fn handle_file_changes(input_dir: PathBuf, worker: Worker, clients: Clients) -> Result<()> {
+    println!(
+        "✔ Watching for changes in -> {}",
+        input_dir.display().blue().bold()
+    );
+
+    let (tx, rx) = std::sync::mpsc::channel();
+    let mut debouncer = new_debouncer(Duration::from_secs(1), None, tx).unwrap();
+    debouncer
+        .watcher()
+        .watch(input_dir.as_path(), RecursiveMode::Recursive)
+        .expect("Failed to watch content folder!");
+
+    for result in rx {
+        match result {
+            Err(errors) => errors.iter().for_each(|error| println!("{error:?}")),
+            Ok(_) => {
+                println!("{}", "\n✔ Changes detected, rebuilding...".cyan());
+                /* Ok is not working here for some reason */
+                if let Err(e) = worker.build() {
+                    println!("- Build failed -> {}", e.to_string().red().bold());
+                } else {
+                    // Send message to all clients to reload
+                    let mut clients = clients.lock().await;
+                    for (_, client) in clients.iter_mut() {
+                        client
+                            .send(tungstenite::Message::Text("reload".to_string()))
+                            .await?;
+                    }
+                }
+            }
         }
     }
 
