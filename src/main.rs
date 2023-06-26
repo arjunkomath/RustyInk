@@ -163,10 +163,6 @@ async fn accept_connection(stream: TcpStream, clients: Clients) -> Result<()> {
 
     clients.lock().await.insert(addr.to_string(), write);
 
-    // write
-    //     .send(tungstenite::Message::Text("hello".to_string()))
-    //     .await?;
-
     Ok(())
 }
 
