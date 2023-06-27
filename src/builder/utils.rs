@@ -1,9 +1,6 @@
-use std::{fs, net::SocketAddr, path::PathBuf};
+use std::{fs, path::PathBuf};
 
 use anyhow::{Context, Result};
-use axum::Router;
-use owo_colors::OwoColorize;
-use tower_http::{services::ServeDir, trace::TraceLayer};
 
 use super::cache::Cache;
 
@@ -23,25 +20,6 @@ pub fn path_to_string(path: &PathBuf) -> Result<String> {
                 .context("Failed to parse patht to string")
                 .map(|s| s.to_string())
         })
-}
-
-pub async fn start_dev_server(output_dir: String, port: u16) -> Result<()> {
-    let addr = SocketAddr::from(([0, 0, 0, 0], port));
-    let _ = tokio::net::TcpListener::bind(addr).await?;
-
-    let app = Router::new().nest_service("/", ServeDir::new(output_dir));
-
-    println!(
-        "✔ Starting Dev server on -> {}:{}",
-        "http://localhost".bold(),
-        port
-    );
-
-    axum::Server::bind(&addr)
-        .serve(app.layer(TraceLayer::new_for_http()).into_make_service())
-        .await?;
-
-    Ok(())
 }
 
 pub fn parse_string_to_yaml(string: &str) -> Result<serde_yaml::Value> {

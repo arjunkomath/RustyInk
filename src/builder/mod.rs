@@ -15,6 +15,7 @@ use walkdir::WalkDir;
 
 pub mod bootstrap;
 pub mod cache;
+pub mod dev_server;
 mod render;
 mod seo;
 pub mod settings;
