@@ -18,6 +18,18 @@ use super::Worker;
 
 pub type Clients = Arc<Mutex<HashMap<String, SplitSink<WebSocketStream<TcpStream>, Message>>>>;
 
+pub const WEBSOCKET_CLIENT_JS: &'static str = r#"
+    <script type="module">
+        const socket = new WebSocket("ws://localhost:3001");
+
+        socket.onmessage = function (event) {
+            if (event.data === "RELOAD") {
+                window.location.reload();
+            }
+        };
+    </script>
+"#;
+
 pub async fn start_dev_server(output_dir: String, port: u16) -> Result<()> {
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     let _ = tokio::net::TcpListener::bind(addr).await?;
@@ -41,7 +53,6 @@ pub async fn accept_connection(stream: TcpStream, clients: Clients) -> Result<()
     let addr = stream
         .peer_addr()
         .expect("connected streams should have a peer address");
-    println!("Peer address: {}", addr);
 
     let ws_stream = accept_async(stream).await?;
 
@@ -74,7 +85,7 @@ pub async fn handle_file_changes(
             Err(errors) => errors.iter().for_each(|error| println!("{error:?}")),
             Ok(_) => {
                 println!("{}", "\n✔ Changes detected, rebuilding...".cyan());
-                /* Ok is not working here for some reason */
+
                 if let Err(e) = worker.build() {
                     println!("- Build failed -> {}", e.to_string().red().bold());
                 } else {
@@ -82,7 +93,7 @@ pub async fn handle_file_changes(
                     let mut clients = clients.lock().await;
                     for (_, client) in clients.iter_mut() {
                         client
-                            .send(tungstenite::Message::Text("reload".to_string()))
+                            .send(tungstenite::Message::Text("RELOAD".to_string()))
                             .await?;
                     }
                 }

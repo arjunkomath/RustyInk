@@ -100,7 +100,7 @@ async fn main() -> Result<()> {
                 return Ok(());
             }
 
-            let worker = Worker::new(&input_dir, Some(cache))?;
+            let worker = Worker::new(&input_dir, Some(cache), true)?;
             let output_dir = worker.get_output_dir().to_string();
             let port = worker.get_settings().dev.port;
 
@@ -121,7 +121,7 @@ async fn main() -> Result<()> {
                     clients.clone(),
                 ));
 
-                let addr = "127.0.0.1:3001".to_string();
+                let addr = "0.0.0.0:3001".to_string();
                 println!("✔ Listening socket connections on {}", addr.blue().bold());
 
                 let listener = TcpListener::bind(&addr).await?;
@@ -132,7 +132,7 @@ async fn main() -> Result<()> {
             }
         }
         Commands::Build { input_dir } => {
-            let worker = Worker::new(&input_dir, None)?;
+            let worker = Worker::new(&input_dir, None, true)?;
 
             if let Err(e) = worker.build() {
                 println!("- Build failed -> {}", e.to_string().red().bold());

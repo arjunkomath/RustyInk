@@ -1,3 +1,5 @@
+use crate::builder::dev_server::WEBSOCKET_CLIENT_JS;
+
 use self::utils::{create_dir_in_path, parse_string_to_yaml, path_to_string};
 use anyhow::{Context, Result};
 use config::Config;
@@ -33,10 +35,11 @@ pub struct Worker {
     output_dir: String,
     config_file: String,
     cache: Option<cache::Cache>,
+    is_dev: bool,
 }
 
 impl Worker {
-    pub fn new(input_dir: &Path, cache: Option<cache::Cache>) -> Result<Self> {
+    pub fn new(input_dir: &Path, cache: Option<cache::Cache>, is_dev: bool) -> Result<Self> {
         let output_dir = OUTPUT_DIR;
         let pages_dir = path_to_string(&input_dir.join(PAGES_DIR))?;
         let public_dir = path_to_string(&input_dir.join(PUBLIC_DIR))?;
@@ -52,6 +55,7 @@ impl Worker {
             theme_dir,
             config_file,
             cache,
+            is_dev,
         })
     }
 
@@ -213,6 +217,13 @@ impl Worker {
         fs::create_dir_all(folder)?;
 
         println!("{} {}", "✔ Generated".green(), &html_file);
+
+        if self.is_dev {
+            // Add websocket client to html
+            let html = format!("{}\n{}", html, WEBSOCKET_CLIENT_JS);
+            fs::write(&html_file, html)?;
+            return Ok(());
+        }
 
         let mut html_minifier = HTMLMinifier::new();
         html_minifier.digest(&html)?;
