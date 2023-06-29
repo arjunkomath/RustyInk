@@ -5,9 +5,9 @@ use std::{
     println,
 };
 
-use crate::builder::utils::path_to_string;
+use crate::builder::utils;
 
-use super::utils::create_dir_in_path;
+use super::settings::Settings;
 use anyhow::{Context, Result};
 use async_recursion::async_recursion;
 use owo_colors::OwoColorize;
@@ -94,9 +94,9 @@ async fn download_folder(
 }
 
 pub async fn download_theme(project_dir: &PathBuf, theme: &str) -> Result<()> {
-    create_dir_in_path(project_dir)?;
+    utils::create_dir_in_path(project_dir)?;
 
-    let project_dir = path_to_string(project_dir)?;
+    let project_dir = utils::path_to_string(project_dir)?;
 
     let client = Client::new();
     let repo_owner = "arjunkomath";
@@ -105,6 +105,13 @@ pub async fn download_theme(project_dir: &PathBuf, theme: &str) -> Result<()> {
     println!("- Downloading theme {}", theme.bold().blue());
 
     download_folder(&project_dir, theme, &client, repo_owner, repo_name, theme).await?;
+
+    Ok(())
+}
+
+pub fn create_settings_file(project_dir: &PathBuf) -> Result<()> {
+    let settings = Settings::default().to_toml()?;
+    fs::write(Path::new(project_dir).join("Settings.toml"), settings)?;
 
     Ok(())
 }

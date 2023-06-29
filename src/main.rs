@@ -81,6 +81,9 @@ async fn main() -> Result<()> {
                     println!("- {}", e.to_string().red().bold());
                 }
                 _ => {
+                    // Create settings file
+                    bootstrap::create_settings_file(&project_dir)?;
+
                     println!(
                         "- Project created in {}",
                         project_dir.display().blue().bold()
