@@ -22,6 +22,10 @@ pub const WEBSOCKET_CLIENT_JS: &'static str = r#"
     <script type="module">
         const socket = new WebSocket("ws://localhost:3001");
 
+        socket.onopen = function (event) {
+            console.log("✔ Connected to dev server");
+        };
+
         socket.onmessage = function (event) {
             if (event.data === "RELOAD") {
                 window.location.reload();

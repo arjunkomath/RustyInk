@@ -106,6 +106,7 @@ async fn main() -> Result<()> {
             let worker = Worker::new(&input_dir, Some(cache), true)?;
             let output_dir = worker.get_output_dir().to_string();
             let port = worker.get_settings().dev.port;
+            let ws_port = worker.get_settings().dev.ws_port;
 
             // Trigger a build
             if let Err(e) = worker.build() {
@@ -124,9 +125,7 @@ async fn main() -> Result<()> {
                     clients.clone(),
                 ));
 
-                let addr = "0.0.0.0:3001".to_string();
-                println!("✔ Listening socket connections on {}", addr.blue().bold());
-
+                let addr = format!("0.0.0.0:{}", ws_port);
                 let listener = TcpListener::bind(&addr).await?;
 
                 while let Ok((stream, _)) = listener.accept().await {
