@@ -1,17 +1,18 @@
-use std::env;
+use std::collections::HashMap;
 use std::path::PathBuf;
-use std::time::Duration;
+use std::sync::Arc;
+use std::{env, println};
 
 use crate::builder::bootstrap;
-use crate::builder::utils::path_to_string;
+use crate::builder::dev_server::Clients;
 use crate::builder::Worker;
-use anyhow::{Context, Ok, Result};
-use builder::{cache, utils};
+use anyhow::{Context, Result};
+use builder::{cache, dev_server, utils};
 use clap::{Parser, Subcommand};
 use directories::ProjectDirs;
-use notify::RecursiveMode;
-use notify_debouncer_mini::new_debouncer;
 use owo_colors::OwoColorize;
+use tokio::net::TcpListener;
+use tokio::sync::Mutex;
 
 mod builder;
 
@@ -80,6 +81,9 @@ async fn main() -> Result<()> {
                     println!("- {}", e.to_string().red().bold());
                 }
                 _ => {
+                    // Create settings file
+                    bootstrap::create_settings_file(&project_dir)?;
+
                     println!(
                         "- Project created in {}",
                         project_dir.display().blue().bold()
@@ -88,7 +92,7 @@ async fn main() -> Result<()> {
             }
         }
         Commands::Dev { input_dir, watch } => {
-            if path_to_string(&input_dir)? == path_to_string(&env::current_dir()?)? {
+            if utils::path_to_string(&input_dir)? == utils::path_to_string(&env::current_dir()?)? {
                 println!(
                     "{}",
                     "\nSorry, you cannot use current directory as input directory as output is written to it!"
@@ -99,53 +103,38 @@ async fn main() -> Result<()> {
                 return Ok(());
             }
 
-            let worker = Worker::new(&input_dir, Some(cache))?;
+            let worker = Worker::new(&input_dir, Some(cache), true)?;
             let output_dir = worker.get_output_dir().to_string();
             let port = worker.get_settings().dev.port;
+            let ws_port = worker.get_settings().dev.ws_port;
 
             // Trigger a build
             if let Err(e) = worker.build() {
                 println!("- Build failed -> {}", e.to_string().red().bold());
             }
 
+            // Start dev server
+            tokio::task::spawn(dev_server::start_dev_server(output_dir, port));
+
             if watch {
-                tokio::task::spawn_blocking(move || {
-                    println!(
-                        "✔ Watching for changes in -> {}",
-                        input_dir.display().blue().bold()
-                    );
+                let clients: Clients = Arc::new(Mutex::new(HashMap::new()));
 
-                    let (tx, rx) = std::sync::mpsc::channel();
-                    let mut debouncer = new_debouncer(Duration::from_secs(1), None, tx).unwrap();
-                    debouncer
-                        .watcher()
-                        .watch(input_dir.as_path(), RecursiveMode::Recursive)
-                        .expect("Failed to watch content folder!");
+                tokio::spawn(dev_server::handle_file_changes(
+                    input_dir,
+                    worker,
+                    clients.clone(),
+                ));
 
-                    for result in rx {
-                        match result {
-                            Err(errors) => errors.iter().for_each(|error| println!("{error:?}")),
-                            _ => {
-                                println!("{}", "\n✔ Changes detected, rebuilding...".cyan());
-                                /* Ok is not working here for some reason */
-                                if let Err(e) = worker.build() {
-                                    println!("- Build failed -> {}", e.to_string().red().bold());
-                                }
-                            }
-                        }
-                    }
-                });
-            }
+                let addr = format!("0.0.0.0:{}", ws_port);
+                let listener = TcpListener::bind(&addr).await?;
 
-            if let Err(e) = utils::start_dev_server(output_dir, port).await {
-                println!(
-                    "- Failed to start dev server: {}",
-                    e.to_string().red().bold()
-                );
+                while let Ok((stream, _)) = listener.accept().await {
+                    tokio::spawn(dev_server::accept_connection(stream, clients.clone()));
+                }
             }
         }
         Commands::Build { input_dir } => {
-            let worker = Worker::new(&input_dir, None)?;
+            let worker = Worker::new(&input_dir, None, true)?;
 
             if let Err(e) = worker.build() {
                 println!("- Build failed -> {}", e.to_string().red().bold());

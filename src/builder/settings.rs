@@ -1,6 +1,7 @@
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
     pub dev: DevSettings,
     pub site: Option<SiteSettings>,
@@ -9,6 +10,28 @@ pub struct Settings {
 }
 
 impl Settings {
+    pub fn default() -> Self {
+        Self {
+            dev: DevSettings {
+                port: 3000,
+                ws_port: 3001,
+            },
+            site: None,
+            meta: SiteMeta {
+                title: "RustyInk".to_string(),
+                description: "A blazing fast static site generator".to_string(),
+                og_image_url: None,
+                base_url: None,
+            },
+            navigation: NavigationSettings { links: Vec::new() },
+        }
+    }
+
+    pub fn to_toml(&self) -> Result<String> {
+        let toml = toml::to_string(self)?;
+        Ok(toml)
+    }
+
     pub fn get_site_settings(&self) -> SiteSettings {
         match &self.site {
             Some(site) => site.clone(),
@@ -21,12 +44,13 @@ impl Settings {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DevSettings {
     pub port: u16,
+    pub ws_port: u16,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SiteSettings {
     pub block_search_indexing: Option<bool>,
     pub script_urls: Option<Vec<String>>,
@@ -71,7 +95,7 @@ impl SiteMeta {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NavigationSettings {
     pub links: Vec<Link>,
 }
