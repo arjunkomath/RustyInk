@@ -103,7 +103,7 @@ async fn main() -> Result<()> {
                 return Ok(());
             }
 
-            let worker = Worker::new(&input_dir, Some(cache), true)?;
+            let worker = Worker::dev(&input_dir, Some(cache), true)?;
             let output_dir = worker.get_output_dir().to_string();
             let port = worker.get_settings().dev.port;
             let ws_port = worker.get_settings().dev.ws_port;
@@ -134,7 +134,7 @@ async fn main() -> Result<()> {
             }
         }
         Commands::Build { input_dir } => {
-            let worker = Worker::new(&input_dir, None, true)?;
+            let worker = Worker::prod(&input_dir)?;
 
             if let Err(e) = worker.build() {
                 println!("- Build failed -> {}", e.to_string().red().bold());

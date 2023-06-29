@@ -39,7 +39,7 @@ pub struct Worker {
 }
 
 impl Worker {
-    pub fn new(input_dir: &Path, cache: Option<cache::Cache>, is_dev: bool) -> Result<Self> {
+    pub fn dev(input_dir: &Path, cache: Option<cache::Cache>, is_dev: bool) -> Result<Self> {
         let output_dir = OUTPUT_DIR;
         let pages_dir = path_to_string(&input_dir.join(PAGES_DIR))?;
         let public_dir = path_to_string(&input_dir.join(PUBLIC_DIR))?;
@@ -56,6 +56,26 @@ impl Worker {
             config_file,
             cache,
             is_dev,
+        })
+    }
+
+    pub fn prod(input_dir: &Path) -> Result<Self> {
+        let output_dir = OUTPUT_DIR;
+        let pages_dir = path_to_string(&input_dir.join(PAGES_DIR))?;
+        let public_dir = path_to_string(&input_dir.join(PUBLIC_DIR))?;
+        let theme_dir = path_to_string(&input_dir.join(THEME_DIR))?;
+        let config_file = path_to_string(&input_dir.join("Settings.toml"))?;
+
+        create_dir_in_path(&PathBuf::from(output_dir))?;
+
+        Ok(Self {
+            output_dir: output_dir.to_string(),
+            pages_dir,
+            public_dir,
+            theme_dir,
+            config_file,
+            cache: None,
+            is_dev: false,
         })
     }
 
