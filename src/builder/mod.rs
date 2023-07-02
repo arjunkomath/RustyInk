@@ -88,6 +88,7 @@ impl Worker {
 
     fn copy_public_files(&self) -> Result<()> {
         let public_files: Vec<String> = WalkDir::new(&self.public_dir)
+            .max_depth(1)
             .into_iter()
             .filter_map(|e| e.ok())
             .map(|e| e.path().display().to_string())
