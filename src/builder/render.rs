@@ -86,7 +86,7 @@ impl Render {
     pub fn get_metadata(&self) -> Result<Option<String>> {
         let markdown = fs::read_to_string(&self.file)?;
 
-        let metadata = Regex::new(r"(?s)---(.*?)---")
+        let metadata = Regex::new(r"^(?s)---(.*?)---")
             .context("Failed to parse metadata from markdown file")?;
 
         if let Some(captures) = metadata.captures(&markdown) {
@@ -154,7 +154,7 @@ impl Render {
     fn get_markdown_and_metadata(&self) -> Result<(Option<String>, String)> {
         let markdown = fs::read_to_string(&self.file)?;
 
-        let metadata = Regex::new(r"(?s)---(.*?)---(.*)")
+        let metadata = Regex::new(r"^(?s)---(.*?)---(.*)")
             .context("Failed to parse metadata from markdown file")?;
 
         if let Some(captures) = metadata.captures(&markdown) {

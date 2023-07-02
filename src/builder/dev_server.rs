@@ -78,11 +78,10 @@ pub async fn handle_file_changes(
     );
 
     let (tx, rx) = std::sync::mpsc::channel();
-    let mut debouncer = new_debouncer(Duration::from_secs(1), None, tx).unwrap();
+    let mut debouncer = new_debouncer(Duration::from_secs(1), None, tx)?;
     debouncer
         .watcher()
-        .watch(input_dir.as_path(), RecursiveMode::Recursive)
-        .expect("Failed to watch content folder!");
+        .watch(input_dir.as_path(), RecursiveMode::Recursive)?;
 
     for result in rx {
         match result {
