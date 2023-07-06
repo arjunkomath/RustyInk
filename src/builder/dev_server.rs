@@ -18,7 +18,7 @@ use super::Worker;
 
 pub type Clients = Arc<Mutex<HashMap<String, SplitSink<WebSocketStream<TcpStream>, Message>>>>;
 
-pub const WEBSOCKET_CLIENT_JS: &'static str = r#"
+pub const WEBSOCKET_CLIENT_JS: &str = r#"
     <script type="module">
         const socket = new WebSocket("ws://localhost:3001");
 
