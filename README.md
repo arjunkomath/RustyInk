@@ -4,7 +4,9 @@
 [![Build & test](https://github.com/arjunkomath/RustyInk/actions/workflows/build_test.yml/badge.svg)](https://github.com/arjunkomath/RustyInk/actions/workflows/build_test.yml)
 [![Publish to Pages](https://github.com/arjunkomath/RustyInk/actions/workflows/publish.yml/badge.svg)](https://github.com/arjunkomath/RustyInk/actions/workflows/publish.yml)
 
-> 🚧 This project is currently under development. Expect breaking changes. 🚧
+> **Warning**
+> This project is a work in progress, Expect breaking changes.
+> I'm building this in public. You can follow the progress on Twitter [@arjunz](https://twitter.com/arjunz).
 
 A sleek and minimalist static site generator written in Rust. Designed with simplicity in mind, RustyInk makes website creation a breeze.
 
