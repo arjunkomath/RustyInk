@@ -1,12 +1,10 @@
 {{{body}}}
 
 <ul>
-  {{#each root.blog}}
-    {{#if (not (eq @key "_self"))}}
-      <hgroup>
-        <h4><a href="/blog/{{@key}}/">{{this.title}}</a></h4>
-        <h2>{{this.author}}</h2>
-      </hgroup>
-    {{/if}}
+  {{#each (slice-arr root.blog 1 15)}}
+    <hgroup>
+      <h4><a href="/blog/{{@key}}/">{{this.title}}</a></h4>
+      <h2>{{this.author}}</h2>
+    </hgroup>
   {{/each}}
 </ul>

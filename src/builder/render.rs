@@ -3,7 +3,7 @@ use std::{fs, path::Path};
 use crate::builder::utils::download_url_as_string;
 
 use super::{
-    cache,
+    cache, handlebar_helpers,
     seo::generate_open_graph_tags,
     settings::{self, Link},
     utils::{insert_kv_into_yaml, parse_string_to_yaml},
@@ -66,19 +66,24 @@ impl Render {
             markdown
         };
 
-        let html = Handlebars::new().render_template(
-            &self.get_template("app")?,
-            &RenderData {
-                title: self.settings.meta.title.clone(),
-                description: self.settings.meta.description.clone(),
-                open_graph_tags: generate_open_graph_tags(&self.settings)?,
-                content,
-                styles: self.get_global_styles()?,
-                scripts: self.get_global_scripts()?,
-                links: self.settings.navigation.links.clone(),
-                page_metadata: metadata,
-            },
-        )?;
+        let mut handlebars = Handlebars::new();
+        handlebars.register_helper("slice-arr", Box::new(handlebar_helpers::SliceHelper));
+
+        let html = handlebars
+            .render_template(
+                &self.get_template("app").context("Failed to get template")?,
+                &RenderData {
+                    title: self.settings.meta.title.clone(),
+                    description: self.settings.meta.description.clone(),
+                    open_graph_tags: generate_open_graph_tags(&self.settings)?,
+                    content,
+                    styles: self.get_global_styles()?,
+                    scripts: self.get_global_scripts()?,
+                    links: self.settings.navigation.links.clone(),
+                    page_metadata: metadata,
+                },
+            )
+            .context("Failed to render page")?;
 
         Ok(html)
     }
@@ -211,8 +216,10 @@ impl Render {
 
             // println!("{}", serde_json::to_string_pretty(&metadata)?);
 
-            let body =
-                Handlebars::new().render_template(&self.get_template(template)?, &metadata)?;
+            let mut handlebars = Handlebars::new();
+            handlebars.register_helper("slice-arr", Box::new(handlebar_helpers::SliceHelper));
+
+            let body = handlebars.render_template(&self.get_template(template)?, &metadata)?;
 
             Ok(body)
         } else {
