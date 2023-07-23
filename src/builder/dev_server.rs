@@ -92,6 +92,7 @@ pub async fn handle_file_changes(
                 if let Err(e) = worker.build() {
                     println!("- Build failed -> {}", e.to_string().red().bold());
                 } else {
+                    println!("✔ Build successful, reloading...");
                     // Send message to all clients to reload
                     let mut clients = clients.lock().await;
                     for (_, client) in clients.iter_mut() {

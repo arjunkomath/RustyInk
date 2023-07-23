@@ -23,7 +23,12 @@ impl Settings {
                 og_image_url: None,
                 base_url: None,
             },
-            navigation: NavigationSettings { links: Vec::new() },
+            navigation: NavigationSettings {
+                links: Vec::<Link>::from([Link {
+                    label: "Home".to_string(),
+                    url: "/".to_string(),
+                }]),
+            },
         }
     }
 
