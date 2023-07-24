@@ -1,4 +1,7 @@
-use handlebars::{Context, Handlebars, Helper, HelperDef, RenderContext, RenderError, ScopedJson};
+use handlebars::{
+    Context, Handlebars, Helper, HelperDef, HelperResult, Output, RenderContext, RenderError,
+    ScopedJson,
+};
 use serde_json::value::Value as Json;
 
 #[derive(Clone, Copy)]
@@ -48,5 +51,23 @@ impl HelperDef for SliceHelper {
             }
             _ => Err(RenderError::new("Object/Array not found")),
         }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct StringifyHelper;
+
+impl HelperDef for StringifyHelper {
+    fn call<'reg: 'rc, 'rc>(
+        &self,
+        h: &Helper,
+        _: &Handlebars,
+        _: &Context,
+        _: &mut RenderContext,
+        out: &mut dyn Output,
+    ) -> HelperResult {
+        let param = h.param(0).map(|v| v.value()).expect("Expected parameter");
+        out.write(Json::to_string(param).as_str())?;
+        Ok(())
     }
 }

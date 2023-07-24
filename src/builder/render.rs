@@ -14,11 +14,12 @@ use rayon::prelude::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-pub struct Render {
+pub struct Render<'a> {
     file: String,
     theme_dir: String,
     settings: settings::Settings,
     cache: Option<cache::Cache>,
+    handlebars: Handlebars<'a>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -34,18 +35,23 @@ struct RenderData {
     page_metadata: Option<serde_yaml::Value>,
 }
 
-impl Render {
+impl Render<'_> {
     pub fn new(
         file: &str,
         theme_dir: &str,
         settings: settings::Settings,
         cache: Option<cache::Cache>,
     ) -> Self {
+        let mut handlebars = Handlebars::new();
+        handlebars.register_helper("slice", Box::new(handlebar_helpers::SliceHelper));
+        handlebars.register_helper("stringify", Box::new(handlebar_helpers::StringifyHelper));
+
         Self {
             file: file.to_string(),
             theme_dir: theme_dir.to_string(),
             settings,
             cache,
+            handlebars,
         }
     }
 
@@ -66,10 +72,8 @@ impl Render {
             markdown
         };
 
-        let mut handlebars = Handlebars::new();
-        handlebars.register_helper("slice-arr", Box::new(handlebar_helpers::SliceHelper));
-
-        let html = handlebars
+        let html = self
+            .handlebars
             .render_template(
                 &self.get_template("app").context("Failed to get template")?,
                 &RenderData {
@@ -216,10 +220,9 @@ impl Render {
 
             // println!("{}", serde_json::to_string_pretty(&metadata)?);
 
-            let mut handlebars = Handlebars::new();
-            handlebars.register_helper("slice-arr", Box::new(handlebar_helpers::SliceHelper));
-
-            let body = handlebars.render_template(&self.get_template(template)?, &metadata)?;
+            let body = self
+                .handlebars
+                .render_template(&self.get_template(template)?, &metadata)?;
 
             Ok(body)
         } else {
