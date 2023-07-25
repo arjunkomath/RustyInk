@@ -87,7 +87,7 @@ Then define a new page under blog folder and specify the template as `blog` whic
 ```md
 ---
 template: blog
-title: ~/Rusty!nk/blog
+title: ~/RustyInk/blog
 ---
 
 ### This is a blog index

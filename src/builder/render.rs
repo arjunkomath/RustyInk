@@ -120,13 +120,9 @@ impl Render<'_> {
 
     fn get_global_styles(&self) -> Result<String> {
         let css_path = format!("{}/global.css", self.theme_dir);
-        let sass_path = format!("{}/global.sass", self.theme_dir);
 
         let styles = if Path::new(&css_path).exists() {
             fs::read_to_string(css_path)?
-        } else if Path::new(&sass_path).exists() {
-            let styles = fs::read_to_string(sass_path)?;
-            grass::from_string(styles, &grass::Options::default())?
         } else {
             String::new()
         };

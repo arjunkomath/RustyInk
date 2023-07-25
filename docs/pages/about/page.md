@@ -1,6 +1,6 @@
 ---
 template: post
-title: ~/Rusty!nk/About
+title: ~/RustyInk/About
 author: Arjun Komath
 author_link: https://twitter.com/arjunz
 date_published: 6 June, 2023

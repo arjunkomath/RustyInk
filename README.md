@@ -1,4 +1,4 @@
-# Rusty!nk
+# RustyInk
 
 [![crates.io](https://img.shields.io/crates/v/rustyink)](https://crates.io/crates/rustyink)
 [![Build & test](https://github.com/arjunkomath/RustyInk/actions/workflows/build_test.yml/badge.svg)](https://github.com/arjunkomath/RustyInk/actions/workflows/build_test.yml)
@@ -95,7 +95,7 @@ Then define a new page under blog folder and specify the template as `blog` whic
 ```md
 --
 template: blog
-title: ~/Rusty!nk/blog
+title: ~/RustyInk/blog
 --
 
 ### This is a blog index
