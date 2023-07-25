@@ -148,7 +148,7 @@ impl Render<'_> {
             .collect::<Vec<String>>()
             .join("\n");
 
-        let style_tag = format!("<style>{}{}</style>", styles, downloaded_styles);
+        let style_tag = format!("<style>{}{}</style>", downloaded_styles, styles);
 
         Ok(style_tag)
     }
