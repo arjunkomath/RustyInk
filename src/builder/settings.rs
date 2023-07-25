@@ -7,6 +7,7 @@ pub struct Settings {
     pub site: Option<SiteSettings>,
     pub meta: SiteMeta,
     pub navigation: NavigationSettings,
+    pub data: Option<toml::Value>,
 }
 
 impl Settings {
@@ -29,6 +30,7 @@ impl Settings {
                     url: "/".to_string(),
                 }]),
             },
+            data: None,
         }
     }
 
@@ -45,6 +47,15 @@ impl Settings {
                 script_urls: Some(Vec::<String>::new()),
                 style_urls: Some(Vec::<String>::new()),
             },
+        }
+    }
+
+    pub fn get_data_yaml(&self) -> Result<Option<serde_yaml::Value>> {
+        if let Some(data) = &self.data {
+            let data = serde_yaml::to_value(data)?;
+            Ok(Some(data))
+        } else {
+            Ok(None)
         }
     }
 }

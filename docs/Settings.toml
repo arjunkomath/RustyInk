@@ -23,3 +23,7 @@ links = [
     { label = "Blog", url = "/blog/" },
     { label = "About", url = "/about/" },
 ]
+
+[data]
+author = "Arjun Komath"
+author_link = "https://twitter.com/arjunz"
