@@ -34,7 +34,7 @@ impl Settings {
         }
     }
 
-    pub fn to_toml(&self) -> Result<String> {
+    pub fn to_toml_string(&self) -> Result<String> {
         let toml = toml::to_string(self)?;
         Ok(toml)
     }

@@ -1,9 +1,8 @@
-use crate::builder::dev_server::WEBSOCKET_CLIENT_JS;
+use crate::{dev::server::WEBSOCKET_CLIENT_JS, shared::settings};
 
-use self::utils::{create_dir_in_path, parse_string_to_yaml, path_to_string};
 use anyhow::{Context, Result};
 use config::Config;
-use fs_extra::{copy_items, dir::CopyOptions};
+use fs_extra::dir::CopyOptions;
 use html_minifier::HTMLMinifier;
 use owo_colors::OwoColorize;
 use rayon::prelude::*;
@@ -15,13 +14,10 @@ use std::{
 use tokio::time::Instant;
 use walkdir::WalkDir;
 
-pub mod bootstrap;
 pub mod cache;
-pub mod dev_server;
 mod handlebar_helpers;
 mod render;
 mod seo;
-pub mod settings;
 pub mod utils;
 
 pub const PAGES_DIR: &str = "pages";
@@ -42,12 +38,12 @@ pub struct Worker {
 impl Worker {
     pub fn dev(input_dir: &Path, cache: Option<cache::Cache>, is_dev: bool) -> Result<Self> {
         let output_dir = OUTPUT_DIR;
-        let pages_dir = path_to_string(&input_dir.join(PAGES_DIR))?;
-        let public_dir = path_to_string(&input_dir.join(PUBLIC_DIR))?;
-        let theme_dir = path_to_string(&input_dir.join(THEME_DIR))?;
-        let config_file = path_to_string(&input_dir.join("Settings.toml"))?;
+        let pages_dir = utils::path_to_string(&input_dir.join(PAGES_DIR))?;
+        let public_dir = utils::path_to_string(&input_dir.join(PUBLIC_DIR))?;
+        let theme_dir = utils::path_to_string(&input_dir.join(THEME_DIR))?;
+        let config_file = utils::path_to_string(&input_dir.join("Settings.toml"))?;
 
-        create_dir_in_path(&PathBuf::from(output_dir))?;
+        utils::create_dir_in_path(&PathBuf::from(output_dir))?;
 
         Ok(Self {
             output_dir: output_dir.to_string(),
@@ -62,12 +58,12 @@ impl Worker {
 
     pub fn prod(input_dir: &Path) -> Result<Self> {
         let output_dir = OUTPUT_DIR;
-        let pages_dir = path_to_string(&input_dir.join(PAGES_DIR))?;
-        let public_dir = path_to_string(&input_dir.join(PUBLIC_DIR))?;
-        let theme_dir = path_to_string(&input_dir.join(THEME_DIR))?;
-        let config_file = path_to_string(&input_dir.join("Settings.toml"))?;
+        let pages_dir = utils::path_to_string(&input_dir.join(PAGES_DIR))?;
+        let public_dir = utils::path_to_string(&input_dir.join(PUBLIC_DIR))?;
+        let theme_dir = utils::path_to_string(&input_dir.join(THEME_DIR))?;
+        let config_file = utils::path_to_string(&input_dir.join("Settings.toml"))?;
 
-        create_dir_in_path(&PathBuf::from(output_dir))?;
+        utils::create_dir_in_path(&PathBuf::from(output_dir))?;
 
         Ok(Self {
             output_dir: output_dir.to_string(),
@@ -82,7 +78,7 @@ impl Worker {
 
     fn setup_output(&self) -> Result<()> {
         fs::remove_dir_all(&self.output_dir)?;
-        create_dir_in_path(&PathBuf::from(&self.output_dir))?;
+        utils::create_dir_in_path(&PathBuf::from(&self.output_dir))?;
 
         Ok(())
     }
@@ -96,7 +92,7 @@ impl Worker {
             .skip(1)
             .collect();
         let options = CopyOptions::new();
-        copy_items(&public_files, &self.output_dir, &options)?;
+        fs_extra::copy_items(&public_files, &self.output_dir, &options)?;
 
         Ok(())
     }
@@ -290,7 +286,7 @@ impl Worker {
                     };
             }
 
-            if let Ok(metadata) = parse_string_to_yaml(metadata) {
+            if let Ok(metadata) = utils::parse_string_to_yaml(metadata) {
                 current_yaml.insert(serde_yaml::Value::String(last.to_string()), metadata);
             } else {
                 current_yaml.insert(

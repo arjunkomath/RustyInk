@@ -1,13 +1,9 @@
 use std::{fs, path::Path};
 
-use crate::builder::utils::download_url_as_string;
+use super::{seo, utils};
+use crate::shared::settings::{self, Link};
 
-use super::{
-    cache, handlebar_helpers,
-    seo::generate_open_graph_tags,
-    settings::{self, Link},
-    utils::{insert_kv_into_yaml, parse_string_to_yaml},
-};
+use super::{cache, handlebar_helpers};
 use anyhow::{Context, Result};
 use handlebars::Handlebars;
 use rayon::prelude::*;
@@ -23,17 +19,23 @@ pub struct Render<'a> {
 }
 
 #[derive(Serialize, Deserialize)]
-struct RenderData {
+struct AppRenderData {
     title: String,
     description: String,
     open_graph_tags: String,
     styles: String,
     scripts: String,
-
     links: Vec<Link>,
     content: String,
     page_metadata: Option<serde_yaml::Value>,
     data: Option<toml::Value>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct PageRenderData {
+    body: String,
+    root: serde_yaml::Value,
+    data: serde_yaml::Value,
 }
 
 impl Render<'_> {
@@ -46,6 +48,10 @@ impl Render<'_> {
         let mut handlebars = Handlebars::new();
         handlebars.register_helper("slice", Box::new(handlebar_helpers::SliceHelper));
         handlebars.register_helper("stringify", Box::new(handlebar_helpers::StringifyHelper));
+        handlebars.register_helper(
+            "format-date",
+            Box::new(handlebar_helpers::DateFormaterHelper),
+        );
 
         Self {
             file: file.to_string(),
@@ -60,7 +66,7 @@ impl Render<'_> {
         let (metadata, markdown) = self.get_markdown_and_metadata()?;
 
         let metadata = if let Some(metadata) = metadata {
-            let metadata = parse_string_to_yaml(&metadata)?;
+            let metadata = utils::parse_string_to_yaml(&metadata)?;
             Some(metadata)
         } else {
             None
@@ -77,10 +83,10 @@ impl Render<'_> {
             .handlebars
             .render_template(
                 &self.get_template("app").context("Failed to get template")?,
-                &RenderData {
+                &AppRenderData {
                     title: self.settings.meta.title.clone(),
                     description: self.settings.meta.description.clone(),
-                    open_graph_tags: generate_open_graph_tags(&self.settings)?,
+                    open_graph_tags: seo::generate_open_graph_tags(&self.settings)?,
                     content,
                     styles: self.get_global_styles()?,
                     scripts: self.get_global_scripts()?,
@@ -133,7 +139,7 @@ impl Render<'_> {
             .get_style_urls()
             .par_iter()
             .map(
-                |url| match download_url_as_string(url, self.cache.clone()) {
+                |url| match utils::download_url_as_string(url, self.cache.clone()) {
                     Ok(style) => style,
                     Err(e) => {
                         println!("Failed to download style: {}", e);
@@ -156,7 +162,7 @@ impl Render<'_> {
             .get_script_urls()
             .par_iter()
             .map(
-                |url| match download_url_as_string(url, self.cache.clone()) {
+                |url| match utils::download_url_as_string(url, self.cache.clone()) {
                     Ok(script) => script,
                     Err(e) => {
                         println!("Failed to download script: {}", e);
@@ -216,22 +222,23 @@ impl Render<'_> {
                 .as_str()
                 .with_context(|| format!("Failed to get template from metadata: {}", self.file))?;
 
-            let metadata = insert_kv_into_yaml(
-                metadata,
-                "body",
-                &serde_yaml::Value::String(body.to_string()),
-            )?;
-            let metadata = insert_kv_into_yaml(&metadata, "root", site_directory)?;
-
-            let metadata = if let Some(data) = self.settings.get_data_yaml()? {
-                insert_kv_into_yaml(&metadata, "data", &data)?
+            let page_render_data = if let Some(data) = self.settings.get_data_yaml()? {
+                PageRenderData {
+                    body: body.to_string(),
+                    root: site_directory.clone(),
+                    data: utils::merge_yaml_values(data, metadata.clone()),
+                }
             } else {
-                metadata
+                PageRenderData {
+                    body: body.to_string(),
+                    data: metadata.clone(),
+                    root: site_directory.clone(),
+                }
             };
 
             let body = self
                 .handlebars
-                .render_template(&self.get_template(template)?, &metadata)?;
+                .render_template(&self.get_template(template)?, &page_render_data)?;
 
             Ok(body)
         } else {

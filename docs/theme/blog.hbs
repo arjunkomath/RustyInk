@@ -2,9 +2,9 @@
 
 <ul>
   {{#each (slice root.blog 1 15)}}
-    <hgroup>
-      <h4><a href="/blog/{{@key}}/">{{this.title}}</a></h4>
-      <h2>{{this.author}}</h2>
-    </hgroup>
+  <hgroup>
+    <h4><a href="/blog/{{@key}}/">{{this.title}}</a></h4>
+    <h2>{{this.author}}</h2>
+  </hgroup>
   {{/each}}
 </ul>

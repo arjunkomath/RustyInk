@@ -1,7 +1,8 @@
-use super::settings::Settings;
 use anyhow::{Context, Result};
 use chrono::prelude::*;
 use sitewriter::{ChangeFreq, UrlEntry};
+
+use crate::shared::settings::Settings;
 
 pub fn generate_robots_txt(settings: &Settings) -> Result<String> {
     let blocked = settings.get_site_settings().is_search_engine_blocked();

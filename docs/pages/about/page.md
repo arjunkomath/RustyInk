@@ -3,7 +3,6 @@ template: post
 title: ~/RustyInk/About
 author: Arjun Komath
 author_link: https://twitter.com/arjunz
-date_published: 6 June, 2023
 some_data: FYI, you can pass any data to template!
 ---
 

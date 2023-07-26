@@ -1,3 +1,4 @@
+use chrono::{LocalResult, TimeZone, Utc};
 use handlebars::{
     Context, Handlebars, Helper, HelperDef, HelperResult, Output, RenderContext, RenderError,
     ScopedJson,
@@ -68,6 +69,52 @@ impl HelperDef for StringifyHelper {
     ) -> HelperResult {
         let param = h.param(0).map(|v| v.value()).expect("Expected parameter");
         out.write(Json::to_string(param).as_str())?;
+        Ok(())
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct DateFormaterHelper;
+
+impl HelperDef for DateFormaterHelper {
+    fn call<'reg: 'rc, 'rc>(
+        &self,
+        h: &Helper,
+        _: &Handlebars,
+        _: &Context,
+        _: &mut RenderContext,
+        out: &mut dyn Output,
+    ) -> HelperResult {
+        let date = h
+            .param(0)
+            .map(|v| v.value())
+            .expect("Expected date parameter");
+        let format = h
+            .param(1)
+            .map(|v| v.value())
+            .expect("Expected format parameter");
+
+        let date = match date {
+            Json::Number(date) => date
+                .as_i64()
+                .map(|v| Utc.timestamp_millis_opt(v))
+                .expect("Failed to parse date"),
+            _ => return Err(RenderError::new("Date must be a string or number")),
+        };
+
+        let format = match format {
+            Json::String(format) => format,
+            _ => return Err(RenderError::new("Format must be a string")),
+        };
+
+        match date {
+            LocalResult::Single(date) => {
+                let date = date.format(format.as_str()).to_string();
+                out.write(date.as_str())?;
+            }
+            _ => return Err(RenderError::new("Failed to parse date")),
+        }
+
         Ok(())
     }
 }

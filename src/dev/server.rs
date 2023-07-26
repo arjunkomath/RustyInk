@@ -14,7 +14,7 @@ use tokio_tungstenite::{
 };
 use tower_http::{services::ServeDir, trace::TraceLayer};
 
-use super::Worker;
+use crate::builder::Worker;
 
 pub type Clients = Arc<Mutex<HashMap<String, SplitSink<WebSocketStream<TcpStream>, Message>>>>;
 
@@ -34,7 +34,7 @@ pub const WEBSOCKET_CLIENT_JS: &str = r#"
     </script>
 "#;
 
-pub async fn start_dev_server(output_dir: String, port: u16) -> Result<()> {
+pub async fn start(output_dir: String, port: u16) -> Result<()> {
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     let _ = tokio::net::TcpListener::bind(addr).await?;
 
