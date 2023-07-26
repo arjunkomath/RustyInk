@@ -4,11 +4,12 @@ use std::sync::Arc;
 use std::{env, println};
 
 use anyhow::{Context, Result};
-use builder::{cache, utils, Worker};
+use builder::{cache, Worker};
 use clap::{Parser, Subcommand};
 use dev::server::Clients;
 use directories::ProjectDirs;
 use owo_colors::OwoColorize;
+use shared::utils;
 use tokio::net::TcpListener;
 use tokio::sync::Mutex;
 

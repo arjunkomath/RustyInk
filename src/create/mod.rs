@@ -5,7 +5,7 @@ use std::{
     println,
 };
 
-use crate::{builder::utils, shared::settings::Settings};
+use crate::shared::{settings::Settings, utils};
 
 use anyhow::{Context, Result};
 use async_recursion::async_recursion;

@@ -1,7 +1,10 @@
 use std::{fs, path::Path};
 
-use super::{seo, utils};
-use crate::shared::settings::{self, Link};
+use super::seo;
+use crate::shared::{
+    settings::{self, Link},
+    utils,
+};
 
 use super::{cache, handlebar_helpers};
 use anyhow::{Context, Result};
@@ -138,15 +141,13 @@ impl Render<'_> {
             .get_site_settings()
             .get_style_urls()
             .par_iter()
-            .map(
-                |url| match utils::download_url_as_string(url, self.cache.clone()) {
-                    Ok(style) => style,
-                    Err(e) => {
-                        println!("Failed to download style: {}", e);
-                        String::new()
-                    }
-                },
-            )
+            .map(|url| match cache::get_file(url, self.cache.clone()) {
+                Ok(style) => style,
+                Err(e) => {
+                    println!("Failed to download style: {}", e);
+                    String::new()
+                }
+            })
             .collect::<Vec<String>>()
             .join("\n");
 
@@ -161,15 +162,13 @@ impl Render<'_> {
             .get_site_settings()
             .get_script_urls()
             .par_iter()
-            .map(
-                |url| match utils::download_url_as_string(url, self.cache.clone()) {
-                    Ok(script) => script,
-                    Err(e) => {
-                        println!("Failed to download script: {}", e);
-                        String::new()
-                    }
-                },
-            )
+            .map(|url| match cache::get_file(url, self.cache.clone()) {
+                Ok(script) => script,
+                Err(e) => {
+                    println!("Failed to download script: {}", e);
+                    String::new()
+                }
+            })
             .collect::<Vec<String>>()
             .join("\n");
 

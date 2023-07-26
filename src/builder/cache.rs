@@ -48,3 +48,20 @@ impl Cache {
         Ok(())
     }
 }
+
+pub fn get_file(url: &str, cache: Option<Cache>) -> Result<String> {
+    let content = cache.as_ref().and_then(|c| c.get(url));
+    if let Some(content) = content {
+        return Ok(content);
+    }
+
+    let client = reqwest::blocking::Client::new();
+    let response = client.get(url).send()?;
+    let content = response.text()?;
+
+    if let Some(cache) = &cache {
+        cache.set(url, content.as_str())?;
+    }
+
+    Ok(content)
+}

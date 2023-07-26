@@ -1,4 +1,7 @@
-use crate::{dev::server::WEBSOCKET_CLIENT_JS, shared::settings};
+use crate::{
+    dev::server::WEBSOCKET_CLIENT_JS,
+    shared::{settings, utils},
+};
 
 use anyhow::{Context, Result};
 use config::Config;
@@ -18,7 +21,6 @@ pub mod cache;
 mod handlebar_helpers;
 mod render;
 mod seo;
-pub mod utils;
 
 pub const PAGES_DIR: &str = "pages";
 pub const PUBLIC_DIR: &str = "public";
