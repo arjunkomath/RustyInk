@@ -3,7 +3,7 @@ use handlebars::{
     Context, Handlebars, Helper, HelperDef, HelperResult, Output, RenderContext, RenderError,
     ScopedJson,
 };
-use serde_json::value::Value as Json;
+use serde_json::{json, value::Value as Json, Map};
 
 #[derive(Clone, Copy)]
 pub struct SliceHelper;
@@ -116,5 +116,79 @@ impl HelperDef for DateFormaterHelper {
         }
 
         Ok(())
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct SortByHelper;
+
+impl HelperDef for SortByHelper {
+    fn call_inner<'reg: 'rc, 'rc>(
+        &self,
+        h: &Helper<'reg, 'rc>,
+        _: &'reg Handlebars<'reg>,
+        _: &'rc Context,
+        _: &mut RenderContext<'reg, 'rc>,
+    ) -> Result<ScopedJson<'reg, 'rc>, RenderError> {
+        let object = h
+            .param(0)
+            .map(|v| v.value())
+            .ok_or(RenderError::new("Array not found"))?;
+        let object = match object {
+            Json::Object(object) => object,
+            _ => return Err(RenderError::new("Object not found")),
+        };
+
+        let sort_by = h
+            .param(1)
+            .map(|v| v.value())
+            .ok_or(RenderError::new("Sort by not found"))?;
+        let sort_by = match sort_by {
+            Json::String(sort_by) => sort_by,
+            _ => return Err(RenderError::new("Sort by must be a string")),
+        };
+
+        let order = h
+            .param(2)
+            .map(|v| v.value())
+            .ok_or(RenderError::new("Order not found"))?;
+        let order = match order {
+            Json::String(order) => order,
+            _ => return Err(RenderError::new("Order must be a string")),
+        };
+
+        if order != "asc" && order != "desc" {
+            return Err(RenderError::new("Order must be either asc or desc"));
+        }
+
+        let mut sortable = object
+            .iter()
+            .map(|object| {
+                let (_, value) = object;
+
+                let value = match value {
+                    Json::Object(object) => object,
+                    _ => return Err(RenderError::new("Object not found")),
+                };
+
+                let key: String = value.get(sort_by).unwrap_or(&json!("")).to_string();
+
+                Ok((key, object))
+            })
+            .collect::<Result<Vec<(String, (&String, &Json))>, RenderError>>()?;
+
+        if order == "asc" {
+            sortable.sort_by(|a, b| b.0.cmp(&a.0));
+        } else {
+            sortable.sort_by(|a, b| a.0.cmp(&b.0));
+        }
+
+        let mut sorted_object = Map::new();
+
+        for (_, (key, value)) in sortable {
+            sorted_object.insert(key.clone(), value.clone());
+        }
+
+        Ok(ScopedJson::Derived(Json::Object(sorted_object)))
     }
 }

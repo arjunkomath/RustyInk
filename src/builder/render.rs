@@ -51,6 +51,7 @@ impl Render<'_> {
         let mut handlebars = Handlebars::new();
         handlebars.register_helper("slice", Box::new(handlebar_helpers::SliceHelper));
         handlebars.register_helper("stringify", Box::new(handlebar_helpers::StringifyHelper));
+        handlebars.register_helper("sort-by", Box::new(handlebar_helpers::SortByHelper));
         handlebars.register_helper(
             "format-date",
             Box::new(handlebar_helpers::DateFormaterHelper),

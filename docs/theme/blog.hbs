@@ -1,10 +1,12 @@
 {{{body}}}
 
 <ul>
-  {{#each (slice root.blog 1 15)}}
+  {{#each (slice (sort-by root.blog "date_published" "desc") 0 15)}}
+  {{#if (not (eq @key "_self"))}}
   <hgroup>
     <h4><a href="/blog/{{@key}}/">{{this.title}}</a></h4>
     <h2>{{this.author}}</h2>
   </hgroup>
+  {{/if}}
   {{/each}}
 </ul>
