@@ -177,7 +177,7 @@ impl HelperDef for SortByHelper {
             })
             .collect::<Result<Vec<(String, (&String, &Json))>, RenderError>>()?;
 
-        if order == "asc" {
+        if order == "desc" {
             sortable.sort_by(|a, b| b.0.cmp(&a.0));
         } else {
             sortable.sort_by(|a, b| a.0.cmp(&b.0));
