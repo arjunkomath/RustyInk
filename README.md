@@ -1,5 +1,7 @@
 # RustyInk
 
+![Art by DALL·E](https://rustyink.cli.rs/images/og.png)
+
 [![crates.io](https://img.shields.io/crates/v/rustyink)](https://crates.io/crates/rustyink)
 ![Crates.io](https://img.shields.io/crates/d/rustyink)
 [![Build & test](https://github.com/arjunkomath/RustyInk/actions/workflows/build_test.yml/badge.svg)](https://github.com/arjunkomath/RustyInk/actions/workflows/build_test.yml)
