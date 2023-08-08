@@ -8,6 +8,7 @@ pub struct Settings {
     pub meta: SiteMeta,
     pub navigation: NavigationSettings,
     pub data: Option<toml::Value>,
+    pub remote_data: Option<toml::Value>,
 }
 
 impl Settings {
@@ -31,6 +32,7 @@ impl Settings {
                 }]),
             },
             data: None,
+            remote_data: None,
         }
     }
 

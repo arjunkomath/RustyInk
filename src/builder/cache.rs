@@ -65,3 +65,22 @@ pub fn get_file(url: &str, cache: Option<Cache>) -> Result<String> {
 
     Ok(content)
 }
+
+pub fn get_json(url: &str, cache: Option<Cache>) -> Result<serde_json::Value> {
+    let content = cache.as_ref().and_then(|c| c.get(url));
+    if let Some(content) = content {
+        return Ok(serde_json::from_str(&content)?);
+    }
+
+    let client = reqwest::blocking::Client::builder()
+        .user_agent("Rusty-Ink")
+        .build()?;
+    let response = client.get(url).send()?;
+    let content = response.text()?;
+
+    if let Some(cache) = &cache {
+        cache.set(url, content.as_str())?;
+    }
+
+    Ok(serde_json::from_str(&content)?)
+}

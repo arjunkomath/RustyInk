@@ -32,6 +32,7 @@ struct AppRenderData {
     content: String,
     page_metadata: Option<serde_yaml::Value>,
     data: Option<toml::Value>,
+    remote_data: serde_json::Value,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -39,6 +40,7 @@ struct PageRenderData {
     body: String,
     root: serde_yaml::Value,
     data: serde_yaml::Value,
+    remote_data: serde_json::Value,
 }
 
 impl Render<'_> {
@@ -97,6 +99,7 @@ impl Render<'_> {
                     links: self.settings.navigation.links.clone(),
                     page_metadata: metadata,
                     data: self.settings.data.clone(),
+                    remote_data: self.get_remote_data()?,
                 },
             )
             .context("Failed to render page")?;
@@ -227,12 +230,14 @@ impl Render<'_> {
                     body: body.to_string(),
                     root: site_directory.clone(),
                     data: utils::merge_yaml_values(data, metadata.clone()),
+                    remote_data: self.get_remote_data()?,
                 }
             } else {
                 PageRenderData {
                     body: body.to_string(),
                     data: metadata.clone(),
                     root: site_directory.clone(),
+                    remote_data: self.get_remote_data()?,
                 }
             };
 
@@ -246,5 +251,34 @@ impl Render<'_> {
         };
 
         template
+    }
+
+    fn get_remote_data(&self) -> Result<serde_json::Value> {
+        match self
+            .settings
+            .remote_data
+            .clone()
+            .and_then(|data| data.as_table().cloned())
+        {
+            Some(data) => {
+                let mut result = serde_json::Map::new();
+
+                for (key, url) in data.iter() {
+                    match url {
+                        toml::Value::String(url) => {
+                            let value = cache::get_json(url, self.cache.clone())?;
+                            result.insert(key.to_string(), value);
+                        }
+                        _ => {
+                            println!("Failed to get remote data for key: {}", url);
+                            result.insert(key.to_string(), serde_json::Value::Null);
+                        }
+                    }
+                }
+
+                Ok(serde_json::Value::Object(result))
+            }
+            None => Ok(serde_json::Value::Null),
+        }
     }
 }

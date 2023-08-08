@@ -27,3 +27,6 @@ links = [
 [data]
 author = "Arjun Komath"
 author_link = "https://twitter.com/arjunz"
+
+[remote_data]
+repo_meta = "https://api.github.com/repos/arjunkomath/rustyink"
