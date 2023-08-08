@@ -106,7 +106,7 @@ title: ~/RustyInk/blog
 ### This is a blog index
 ```
 
-## The `Settings.toml` file
+## The Settings file
 
 The `Settings.toml` file contains the settings of the website, you can customize the website by changing the values in this file.
 
@@ -137,9 +137,12 @@ links = [
   { label = "About", url = "/about/" },
 ]
 
-[data] # The data to be passed to every page, can be accessed using `data` object in every page
+[data] # The data to be passed to every page, can be accessed using `data` object
 author = "Arjun Komath"
 author_link = "https://twitter.com/arjunz"
+
+[remote_data] # The remote data to be fetched and passed to every page, can be accessed using `remote_data` object
+repo_meta = "https://api.github.com/repos/arjunkomath/rustyink" # The url of the remote data
 ```
 
 ## Handlebars Helpers
@@ -212,7 +215,3 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v2
 ```
-
-## LICENSE
-
-You can find the license [here](https://github.com/arjunkomath/RustyInk/blob/main/LICENSE).
