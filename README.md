@@ -144,6 +144,9 @@ links = [
 [data] # The data to be passed to every page, can be accessed using `data` object in every page
 author = "Arjun Komath"
 author_link = "https://twitter.com/arjunz"
+
+[remote_data] # The remote data to be fetched and passed to every page, can be accessed using `remote_data` object
+repo_meta = "https://api.github.com/repos/arjunkomath/rustyink" # The url of the remote data
 ```
 
 ## Handlebars Helpers
