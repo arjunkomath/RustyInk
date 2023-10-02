@@ -78,14 +78,14 @@ pub async fn handle_file_changes(
     );
 
     let (tx, rx) = std::sync::mpsc::channel();
-    let mut debouncer = new_debouncer(Duration::from_secs(1), None, tx)?;
+    let mut debouncer = new_debouncer(Duration::from_secs(1), tx)?;
     debouncer
         .watcher()
         .watch(input_dir.as_path(), RecursiveMode::Recursive)?;
 
     for result in rx {
         match result {
-            Err(errors) => errors.iter().for_each(|error| println!("{error:?}")),
+            Err(error) => println!("{error:?}"),
             Ok(_) => {
                 println!("{}", "\n✔ Changes detected, rebuilding...".cyan());
 
