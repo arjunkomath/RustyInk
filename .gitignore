@@ -16,4 +16,7 @@ target/
 # Generator Output
 _site
 
+# Editor
+.idea/
+
 .DS_Store
