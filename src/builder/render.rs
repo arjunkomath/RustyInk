@@ -114,6 +114,7 @@ impl Render<'_> {
                         &self.settings,
                         url_path,
                         is_amp,
+                        is_amp_template,
                     )?,
                     content,
                     styles: self.get_global_styles()?,

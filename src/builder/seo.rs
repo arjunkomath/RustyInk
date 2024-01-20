@@ -62,6 +62,7 @@ pub fn generate_open_graph_tags(
     settings: &Settings,
     url_path: &str,
     is_amp: bool,
+    is_amp_template: bool,
 ) -> Result<String> {
     let title = settings.meta.title.clone();
     let description = settings.meta.description.clone();
@@ -87,7 +88,12 @@ pub fn generate_open_graph_tags(
         description
     ));
 
-    if is_amp {
+    if is_amp && !is_amp_template {
+        tags.push(format!(
+            "<link rel=\"amphtml\" href=\"{}{}amp\">",
+            base_url, url_path
+        ));
+    } else if is_amp_template && is_amp {
         tags.push(format!(
             "<link rel=\"canonical\" href=\"{}{}\">",
             base_url, url_path
