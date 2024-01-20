@@ -180,7 +180,11 @@ impl Worker {
         // Handle robots.txt, ignore if there is a file already
         if !Path::new(&self.output_dir).join("robots.txt").exists() {
             if let Ok(robots_txt) = seo::generate_robots_txt(&self.get_settings()) {
-                println!("{} robots.txt", "✔ Generated".green());
+                println!(
+                    "{} {} robots.txt",
+                    "✔ Generated".green(),
+                    "File       ".blue()
+                );
                 fs::write(Path::new(&self.output_dir).join("robots.txt"), robots_txt)?;
             }
         }
@@ -190,7 +194,11 @@ impl Worker {
             if let Ok(sitemap_xml) =
                 seo::generate_sitemap_xml(&self.get_settings(), &all_pages_with_metadata)
             {
-                println!("{} sitemap.xml", "✔ Generated".green());
+                println!(
+                    "{} {} sitemap.xml",
+                    "✔ Generated".green(),
+                    "File       ".blue()
+                );
                 fs::write(Path::new(&self.output_dir).join("sitemap.xml"), sitemap_xml)?;
             }
         }
@@ -202,14 +210,6 @@ impl Worker {
     }
 
     fn process_file(&self, file: &str, site_directory: &serde_yaml::Value) -> Result<()> {
-        let html = render::Render::new(
-            file,
-            &self.theme_dir,
-            self.get_settings(),
-            self.cache.clone(),
-        )
-        .render_page(site_directory)?;
-
         let html_file = file
             .replace(&self.pages_dir, &self.output_dir)
             .replace("page.md", "index.html");
@@ -232,12 +232,29 @@ impl Worker {
             html_file
         };
 
+        let actual_url_path = html_file
+            .replace(&self.output_dir, "")
+            .replace("index.html", "");
+
+        let html = render::Render::new(
+            file,
+            &self.theme_dir,
+            self.get_settings(),
+            self.cache.clone(),
+        )
+        .render_page("app", &actual_url_path, site_directory)?;
+
         let folder = Path::new(&html_file)
             .parent()
             .context("Failed to get parent folder")?;
         fs::create_dir_all(folder)?;
 
-        println!("{} {}", "✔ Generated".green(), &html_file);
+        println!(
+            "{} {} {}",
+            "✔ Generated".green(),
+            "Page       ".blue(),
+            &html_file
+        );
 
         if self.is_dev {
             // Add websocket client to html
@@ -249,6 +266,32 @@ impl Worker {
         let mut html_minifier = HTMLMinifier::new();
         html_minifier.digest(&html)?;
         fs::write(&html_file, html_minifier.get_html())?;
+
+        // Handle AMP
+        let amp = render::Render::new(
+            file,
+            &self.theme_dir,
+            self.get_settings(),
+            self.cache.clone(),
+        )
+        .render_page("amp", &actual_url_path, site_directory)?;
+
+        if amp.is_empty() {
+            return Ok(());
+        }
+
+        let amp_file = html_file.replace("index.html", "amp/index.html");
+        println!(
+            "{} {} {}",
+            "✔ Generated".green(),
+            "AMP        ".blue(),
+            &amp_file
+        );
+        let amp_folder = Path::new(&amp_file)
+            .parent()
+            .context("Failed to get parent folder")?;
+        fs::create_dir_all(amp_folder)?;
+        fs::write(amp_file, amp)?;
 
         Ok(())
     }

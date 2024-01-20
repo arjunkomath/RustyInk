@@ -58,9 +58,17 @@ pub fn generate_sitemap_xml(
     Ok(xml)
 }
 
-pub fn generate_open_graph_tags(settings: &Settings) -> Result<String> {
+pub fn generate_open_graph_tags(
+    settings: &Settings,
+    url_path: &str,
+    is_amp: bool,
+) -> Result<String> {
     let title = settings.meta.title.clone();
     let description = settings.meta.description.clone();
+    let base_url = settings
+        .meta
+        .get_base_url()
+        .context("No base url found in Settings.toml")?;
 
     let mut tags = vec![];
 
@@ -78,6 +86,13 @@ pub fn generate_open_graph_tags(settings: &Settings) -> Result<String> {
         "<meta property=\"og:description\" content=\"{}\" />",
         description
     ));
+
+    if is_amp {
+        tags.push(format!(
+            "<link rel=\"canonical\" href=\"{}{}\">",
+            base_url, url_path
+        ));
+    }
 
     // Open Graph / Facebook
     tags.push(String::from(

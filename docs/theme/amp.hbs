@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html amp lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  {{{open_graph_tags}}}
+
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+
+  <title>{{title}}</title>
+
+  <script async src="https://cdn.ampproject.org/v0.js"></script>
+
+  <style amp-boilerplate>
+    body {
+      -webkit-animation: -amp-start 8s steps(1, end) 0s 1 normal both;
+      -moz-animation: -amp-start 8s steps(1, end) 0s 1 normal both;
+      -ms-animation: -amp-start 8s steps(1, end) 0s 1 normal both;
+      animation: -amp-start 8s steps(1, end) 0s 1 normal both
+    }
+
+    @-webkit-keyframes -amp-start {
+      from {
+        visibility: hidden
+      }
+
+      to {
+        visibility: visible
+      }
+    }
+
+    @-moz-keyframes -amp-start {
+      from {
+        visibility: hidden
+      }
+
+      to {
+        visibility: visible
+      }
+    }
+
+    @-ms-keyframes -amp-start {
+      from {
+        visibility: hidden
+      }
+
+      to {
+        visibility: visible
+      }
+    }
+
+    @-o-keyframes -amp-start {
+      from {
+        visibility: hidden
+      }
+
+      to {
+        visibility: visible
+      }
+    }
+
+    @keyframes -amp-start {
+      from {
+        visibility: hidden
+      }
+
+      to {
+        visibility: visible
+      }
+    }
+  </style><noscript>
+    <style amp-boilerplate>
+      body {
+        -webkit-animation: none;
+        -moz-animation: none;
+        -ms-animation: none;
+        animation: none
+      }
+    </style>
+  </noscript>
+</head>
+
+<body>
+  <main class="container">
+    <hgroup>
+      {{#if page_metadata.title}}
+      <h1>{{page_metadata.title}}</h1>
+      <h2>{{page_metadata.description}}</h2>
+      {{else}}
+      <h1>{{title}}</h1>
+      <h2>{{description}}</h2>
+      {{/if}}
+    </hgroup>
+
+    {{{content}}}
+
+  </main>
+  <footer class="container">
+    <small>
+      Built with
+      <a href="https://rustyink.cli.rs" target="_blank" rel="noopener noreferrer">RustyInk</a>
+    </small>
+  </footer>
+</body>
+
+</html>

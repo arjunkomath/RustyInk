@@ -4,6 +4,7 @@ title: "Why I Decided to Learn Rust"
 author: ChatGPT
 author_link: https://chat.openai.com
 date_published: 1663804800004
+amp: true
 ---
 
 > In case you didn't notice the author, this is a test blog post written by ChatGPT. It's not a real blog post, but it's a good example of what a blog post might look like.

@@ -68,7 +68,12 @@ impl Render<'_> {
         }
     }
 
-    pub fn render_page(&self, site_directory: &serde_yaml::Value) -> Result<String> {
+    pub fn render_page(
+        &self,
+        template_name: &str,
+        url_path: &str,
+        site_directory: &serde_yaml::Value,
+    ) -> Result<String> {
         let (metadata, markdown) = self.get_markdown_and_metadata()?;
 
         let metadata = if let Some(metadata) = metadata {
@@ -77,6 +82,17 @@ impl Render<'_> {
         } else {
             None
         };
+
+        // Check if the page is expected to have an amp version
+        let is_amp_template = template_name == "amp";
+        let is_amp = metadata
+            .as_ref()
+            .and_then(|metadata| metadata.get("amp"))
+            .and_then(|amp| amp.as_bool())
+            .unwrap_or(false);
+        if is_amp_template && !is_amp {
+            return Ok(String::new());
+        }
 
         let content = if let Some(metadata) = &metadata {
             self.render_body(&markdown, metadata, site_directory)
@@ -88,11 +104,17 @@ impl Render<'_> {
         let html = self
             .handlebars
             .render_template(
-                &self.get_template("app").context("Failed to get template")?,
+                &self
+                    .get_template(template_name)
+                    .context("Failed to get template")?,
                 &AppRenderData {
                     title: self.settings.meta.title.clone(),
                     description: self.settings.meta.description.clone(),
-                    open_graph_tags: seo::generate_open_graph_tags(&self.settings)?,
+                    open_graph_tags: seo::generate_open_graph_tags(
+                        &self.settings,
+                        url_path,
+                        is_amp,
+                    )?,
                     content,
                     styles: self.get_global_styles()?,
                     scripts: self.get_global_scripts()?,
