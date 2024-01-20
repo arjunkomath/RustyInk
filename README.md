@@ -18,7 +18,8 @@ Here is a live [DEMO](https://techulus.xyz), my blog is built using RustyInk.
 
 - [x] Markdown support
 - [x] Custom themes
-- [x] SEO
+- [x] SEO friendly (OpenGraph, Twitter Cards, Sitemap)
+- [x] AMP support
 - [x] Hot reloading
 - [x] Custom metadata passthrough
 
@@ -148,6 +149,9 @@ author_link = "https://twitter.com/arjunz"
 [remote_data] # The remote data to be fetched and passed to every page, can be accessed using `remote_data` object
 repo_meta = "https://api.github.com/repos/arjunkomath/rustyink" # The url of the remote data
 ```
+## AMP Support
+
+AMP support is built-in, you can enable AMP for a page by adding `amp: true` to the page metadata. While building AMP pages, `amp` template will be used instead of `app` as the base template, this template should be present in the `theme` folder. You can find an example of this in the docs folder.
 
 ## Handlebars Helpers
 
