@@ -1,14 +1,14 @@
 use std::collections::HashMap;
+use std::env;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::{env, println};
 
 use anyhow::{Context, Result};
 use builder::{cache, Worker};
 use clap::{Parser, Subcommand};
 use dev::server::Clients;
 use directories::ProjectDirs;
-use owo_colors::OwoColorize;
+use shared::logger::Logger;
 use shared::utils;
 use tokio::net::TcpListener;
 use tokio::sync::Mutex;
@@ -73,33 +73,27 @@ async fn main() -> Result<()> {
         ProjectDirs::from("rs", "cli", "RustyInk").context("Failed to get project directories")?;
     let cache_dir = project_dirs.cache_dir().to_string_lossy().to_string();
     let cache = cache::Cache::new(cache_dir)?;
+    let log = Logger::new();
 
     match args.command {
         Commands::New { project_dir, theme } => {
-            println!("{}...", "\n- Creating new project".bold());
+            log.activity("Creating new project");
 
             match create::project(&project_dir, &theme).await {
                 Err(e) => {
-                    println!("- {}", e.to_string().red().bold());
+                    log.error(&e.to_string());
                 }
                 _ => {
                     // Create settings file
                     create::settings_file(&project_dir)?;
-
-                    println!(
-                        "- Project created in {}",
-                        project_dir.display().blue().bold()
-                    );
+                    log.info(&format!("Project created in {}", project_dir.display()));
                 }
             }
         }
         Commands::Dev { input_dir, watch } => {
             if utils::path_to_string(&input_dir)? == utils::path_to_string(&env::current_dir()?)? {
-                println!(
-                    "{}",
-                    "\nSorry, you cannot use current directory as input directory as output is written to it!"
-                        .red()
-                        .bold()
+                log.error(
+                    "Sorry, you cannot use current directory as input directory as output is written to it!"
                 );
 
                 return Ok(());
@@ -112,7 +106,7 @@ async fn main() -> Result<()> {
 
             // Trigger a build
             if let Err(e) = worker.build() {
-                println!("- Build failed -> {}", e.to_string().red().bold());
+                log.error(&format!("Build failed -> {}", e));
             }
 
             // Start dev server
@@ -139,7 +133,7 @@ async fn main() -> Result<()> {
             let worker = Worker::prod(&input_dir)?;
 
             if let Err(e) = worker.build() {
-                println!("- Build failed -> {}", e.to_string().red().bold());
+                log.error(&format!("Build failed -> {}", e));
             }
         }
         Commands::Clean {} => {
