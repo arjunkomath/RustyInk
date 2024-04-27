@@ -2,10 +2,9 @@ use std::{
     format, fs,
     io::Write,
     path::{Path, PathBuf},
-    println,
 };
 
-use crate::shared::{settings::Settings, utils};
+use crate::shared::{logger::Logger, settings::Settings, utils};
 
 use anyhow::{Context, Result};
 use async_recursion::async_recursion;
@@ -69,7 +68,7 @@ async fn download_folder(
                 .context("Failed to get parent folder")?;
             fs::create_dir_all(folder)?;
 
-            println!("\tDownloading file: {}", item.path.bold().green());
+            Logger::new().activity(&format!("\tDownloading file: {}", item.path.bold().green()));
 
             let download_url = format!(
                 "https://raw.githubusercontent.com/{}/{}/master/{}",
@@ -101,7 +100,7 @@ pub async fn project(project_dir: &PathBuf, theme: &str) -> Result<()> {
     let repo_owner = "arjunkomath";
     let repo_name = "rustyink-themes";
 
-    println!("- Downloading theme {}", theme.bold().blue());
+    Logger::new().activity(&format!("Downloading theme {}", theme.bold().blue()));
 
     download_folder(&project_dir, theme, &client, repo_owner, repo_name, theme).await?;
 

@@ -14,7 +14,7 @@ use tokio_tungstenite::{
 };
 use tower_http::{services::ServeDir, trace::TraceLayer};
 
-use crate::builder::Worker;
+use crate::{builder::Worker, shared::logger::Logger};
 
 pub type Clients = Arc<Mutex<HashMap<String, SplitSink<WebSocketStream<TcpStream>, Message>>>>;
 
@@ -40,11 +40,10 @@ pub async fn start(output_dir: String, port: u16) -> Result<()> {
 
     let app = Router::new().nest_service("/", ServeDir::new(output_dir));
 
-    println!(
-        "✔ Starting Dev server on -> {}:{}",
-        "http://localhost".bold(),
-        port
-    );
+    Logger::new().success(&format!(
+        "Dev server started on -> http://localhost:{}",
+        port.blue()
+    ));
 
     axum::Server::bind(&addr)
         .serve(app.layer(TraceLayer::new_for_http()).into_make_service())
@@ -72,10 +71,12 @@ pub async fn handle_file_changes(
     worker: Worker,
     clients: Clients,
 ) -> Result<()> {
-    println!(
-        "✔ Watching for changes in -> {}",
+    let log = Logger::new();
+
+    log.success(&format!(
+        "Watching for changes in -> {}",
         input_dir.display().blue().bold()
-    );
+    ));
 
     let (tx, rx) = std::sync::mpsc::channel();
     let mut debouncer = new_debouncer(Duration::from_secs(1), tx)?;
@@ -85,14 +86,14 @@ pub async fn handle_file_changes(
 
     for result in rx {
         match result {
-            Err(error) => println!("{error:?}"),
+            Err(error) => log.error(&error.to_string()),
             Ok(_) => {
-                println!("{}", "\n✔ Changes detected, rebuilding...".cyan());
+                log.info("\nChanges detected, rebuilding...");
 
                 if let Err(e) = worker.build() {
-                    println!("- Build failed -> {}", e.to_string().red().bold());
+                    log.error(&format!("Build failed -> {}", e.to_string().red().bold()));
                 } else {
-                    println!("✔ Build successful, reloading...");
+                    log.success("Build successful, reloading...");
                     // Send message to all clients to reload
                     let mut clients = clients.lock().await;
                     for (_, client) in clients.iter_mut() {

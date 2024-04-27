@@ -2,6 +2,7 @@ use std::{fs, path::Path};
 
 use super::seo;
 use crate::shared::{
+    logger::Logger,
     settings::{self, Link},
     utils,
 };
@@ -171,7 +172,7 @@ impl Render<'_> {
             .map(|url| match cache::get_file(url, self.cache.clone()) {
                 Ok(style) => style,
                 Err(e) => {
-                    println!("Failed to download style: {}", e);
+                    Logger::new().error(&format!("Failed to download style: {}", e));
                     String::new()
                 }
             })
@@ -192,7 +193,7 @@ impl Render<'_> {
             .map(|url| match cache::get_file(url, self.cache.clone()) {
                 Ok(script) => script,
                 Err(e) => {
-                    println!("Failed to download script: {}", e);
+                    Logger::new().error(&format!("Failed to download script: {}", e));
                     String::new()
                 }
             })
@@ -293,7 +294,8 @@ impl Render<'_> {
                             result.insert(key.to_string(), value);
                         }
                         _ => {
-                            println!("Failed to get remote data for key: {}", url);
+                            Logger::new()
+                                .error(&format!("Failed to get remote data for key: {}", url));
                             result.insert(key.to_string(), serde_json::Value::Null);
                         }
                     }

@@ -1,6 +1,6 @@
 use crate::{
     dev::server::WEBSOCKET_CLIENT_JS,
-    shared::{settings, utils},
+    shared::{logger::Logger, settings, utils},
 };
 
 use anyhow::{Context, Result};
@@ -111,19 +111,20 @@ impl Worker {
             Ok(config) => match config.try_deserialize() {
                 Ok(settings) => settings,
                 Err(e) => {
-                    println!("{}: {}", "Failed to parse settings file, ".red(), e);
+                    Logger::new().error(&format!("{}: {}", "Failed to parse settings file, ", e));
                     std::process::exit(1);
                 }
             },
             Err(e) => {
-                println!("{}: {}", "Failed to open settings file, ".red(), e);
+                Logger::new().error(&format!("{}: {}", "Failed to open settings file, ", e));
                 std::process::exit(1);
             }
         }
     }
 
     pub fn build(&self) -> Result<()> {
-        println!("{}...", "\n- Building site".bold());
+        let log = Logger::new();
+        log.activity("Building site");
 
         let start_time = Instant::now();
 
@@ -173,18 +174,18 @@ impl Worker {
 
         markdown_files.par_iter().for_each(|file| {
             if let Err(e) = self.process_file(file, &site_directory) {
-                println!("{}: {}", "Failed to process file, ".red(), e);
+                log.error(&format!("{}: {}", "Failed to process file, ", e));
             }
         });
 
         // Handle robots.txt, ignore if there is a file already
         if !Path::new(&self.output_dir).join("robots.txt").exists() {
             if let Ok(robots_txt) = seo::generate_robots_txt(&self.get_settings()) {
-                println!(
+                log.success(&format!(
                     "{} {} robots.txt",
-                    "✔ Generated".green(),
+                    "Generated",
                     "File       ".blue()
-                );
+                ));
                 fs::write(Path::new(&self.output_dir).join("robots.txt"), robots_txt)?;
             }
         }
@@ -194,22 +195,24 @@ impl Worker {
             if let Ok(sitemap_xml) =
                 seo::generate_sitemap_xml(&self.get_settings(), &all_pages_with_metadata)
             {
-                println!(
+                log.success(&format!(
                     "{} {} sitemap.xml",
-                    "✔ Generated".green(),
+                    "Generated",
                     "File       ".blue()
-                );
+                ));
                 fs::write(Path::new(&self.output_dir).join("sitemap.xml"), sitemap_xml)?;
             }
         }
 
         let elapsed_time = start_time.elapsed();
-        println!("✔ Completed in: {:?}", elapsed_time);
+        log.success(&format!("Completed in: {:?}", elapsed_time));
 
         Ok(())
     }
 
     fn process_file(&self, file: &str, site_directory: &serde_yaml::Value) -> Result<()> {
+        let log = Logger::new();
+
         let html_file = file
             .replace(&self.pages_dir, &self.output_dir)
             .replace("page.md", "index.html");
@@ -249,12 +252,12 @@ impl Worker {
             .context("Failed to get parent folder")?;
         fs::create_dir_all(folder)?;
 
-        println!(
+        log.success(&format!(
             "{} {} {}",
-            "✔ Generated".green(),
+            "Generated",
             "Page       ".blue(),
             &html_file
-        );
+        ));
 
         if self.is_dev {
             // Add websocket client to html
@@ -281,12 +284,12 @@ impl Worker {
         }
 
         let amp_file = html_file.replace("index.html", "amp/index.html");
-        println!(
+        log.success(&format!(
             "{} {} {}",
             "✔ Generated".green(),
             "AMP        ".blue(),
             &amp_file
-        );
+        ));
         let amp_folder = Path::new(&amp_file)
             .parent()
             .context("Failed to get parent folder")?;
@@ -325,7 +328,8 @@ impl Worker {
                     match current_yaml.get_mut(&serde_yaml::Value::String(path.to_string())) {
                         Some(serde_yaml::Value::Mapping(x)) => x,
                         _ => {
-                            println!("{}: {}", "Failed to parse yaml".red(), "Invalid yaml".red());
+                            Logger::new()
+                                .error(&format!("{}: {}", "Failed to parse yaml", "Invalid yaml",));
                             std::process::exit(1);
                         }
                     };
