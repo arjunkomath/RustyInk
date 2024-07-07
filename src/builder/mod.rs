@@ -286,7 +286,7 @@ impl Worker {
         let amp_file = html_file.replace("index.html", "amp/index.html");
         log.success(&format!(
             "{} {} {}",
-            "✔ Generated".green(),
+            "Generated".green(),
             "AMP        ".blue(),
             &amp_file
         ));

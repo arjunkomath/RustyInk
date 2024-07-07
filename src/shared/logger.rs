@@ -8,11 +8,11 @@ impl Logger {
     }
 
     pub fn info(&self, message: &str) {
-        println!("- {}", message.blue());
+        println!("{}", message.blue());
     }
 
     pub fn activity(&self, message: &str) {
-        println!("\n- {}...", message.bold());
+        println!("- {}...", message.bold());
     }
 
     pub fn success(&self, message: &str) {

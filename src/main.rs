@@ -77,18 +77,17 @@ async fn main() -> Result<()> {
 
     match args.command {
         Commands::New { project_dir, theme } => {
-            log.activity("Creating new project");
+            create::project(&project_dir, &theme).await.map_err(|e| {
+                log.error(&e.to_string());
+                anyhow::anyhow!("Failed to create project: {}", e)
+            })?;
 
-            match create::project(&project_dir, &theme).await {
-                Err(e) => {
-                    log.error(&e.to_string());
-                }
-                _ => {
-                    // Create settings file
-                    create::settings_file(&project_dir)?;
-                    log.info(&format!("Project created in {}", project_dir.display()));
-                }
-            }
+            create::settings_file(&project_dir).map_err(|e| {
+                log.error(&e.to_string());
+                anyhow::anyhow!("Failed to create settings file: {}", e)
+            })?;
+
+            log.activity(&format!("Project created in {}", project_dir.display()));
         }
         Commands::Dev { input_dir, watch } => {
             if utils::path_to_string(&input_dir)? == utils::path_to_string(&env::current_dir()?)? {
