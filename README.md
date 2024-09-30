@@ -8,12 +8,11 @@
 [![Publish to Pages](https://github.com/arjunkomath/RustyInk/actions/workflows/publish.yml/badge.svg)](https://github.com/arjunkomath/RustyInk/actions/workflows/publish.yml)
 [![justforfunnoreally.dev badge](https://img.shields.io/badge/justforfunnoreally-dev-9ff)](https://justforfunnoreally.dev)
 
-> **Note**
-> I'm building this in public. You can follow the progress on Twitter [@arjunz](https://twitter.com/arjunz).
-
 A sleek and minimalist static site generator written in Rust. Designed with simplicity in mind, RustyInk makes website creation a breeze.
 
 Here is a live [DEMO](https://techulus.xyz), my blog is built using RustyInk.
+
+If you've any questions, find me on X [@arjunz](https://x.com/arjunz).
 
 ## Features
 
