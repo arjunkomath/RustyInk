@@ -93,12 +93,12 @@ pub fn generate_open_graph_tags(
             "<link rel=\"amphtml\" href=\"{}{}amp\">",
             base_url, url_path
         ));
-    } else if is_amp_template && is_amp {
-        tags.push(format!(
-            "<link rel=\"canonical\" href=\"{}{}\">",
-            base_url, url_path
-        ));
     }
+
+    tags.push(format!(
+        "<link rel=\"canonical\" href=\"{}{}\">",
+        base_url, url_path
+    ));
 
     // Open Graph / Facebook
     tags.push(String::from(

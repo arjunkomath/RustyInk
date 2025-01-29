@@ -16,7 +16,7 @@ pub fn path_to_string(path: &PathBuf) -> Result<String> {
         .with_context(|| format!("Failed to canonicalize path: {:?}", path))
         .and_then(|x| {
             x.to_str()
-                .context("Failed to parse patht to string")
+                .context("Failed to parse path to string")
                 .map(|s| s.to_string())
         })
 }
