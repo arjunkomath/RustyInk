@@ -5,7 +5,6 @@ ws_port = 3001
 [site]
 script_urls = []
 style_urls = [
-  'https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css',
   'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css',
 ]
 
