@@ -14,10 +14,7 @@ pub struct Settings {
 impl Settings {
     pub fn default() -> Self {
         Self {
-            dev: DevSettings {
-                port: 3000,
-                ws_port: 3001,
-            },
+            dev: DevSettings { port: 3000 },
             site: None,
             meta: SiteMeta {
                 title: "RustyInk".to_string(),
@@ -66,7 +63,6 @@ impl Settings {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DevSettings {
     pub port: u16,
-    pub ws_port: u16,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

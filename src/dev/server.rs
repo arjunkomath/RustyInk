@@ -1,26 +1,27 @@
-use std::{collections::HashMap, net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
+use std::{net::SocketAddr, path::PathBuf, time::Duration};
 
 use anyhow::Result;
-use axum::Router;
-use futures_util::{stream::SplitSink, SinkExt, StreamExt};
+use axum::{
+    extract::{
+        ws::{Message, WebSocket, WebSocketUpgrade},
+        State,
+    },
+    response::IntoResponse,
+    routing::get,
+    Router,
+};
+use futures_util::{SinkExt, StreamExt};
 use notify::RecursiveMode;
 use notify_debouncer_mini::new_debouncer;
 use owo_colors::OwoColorize;
-use tokio::{net::TcpStream, sync::Mutex};
-use tokio_tungstenite::{
-    accept_async,
-    tungstenite::{self, Message},
-    WebSocketStream,
-};
+use tokio::sync::broadcast;
 use tower_http::{services::ServeDir, trace::TraceLayer};
 
 use crate::{builder::Worker, shared::logger::Logger};
 
-pub type Clients = Arc<Mutex<HashMap<String, SplitSink<WebSocketStream<TcpStream>, Message>>>>;
-
 pub const WEBSOCKET_CLIENT_JS: &str = r#"
     <script type="module">
-        const socket = new WebSocket("ws://localhost:3001");
+        const socket = new WebSocket(`ws://${location.host}/__livereload`);
 
         socket.onopen = function (event) {
             console.log("✔ Connected to dev server");
@@ -34,42 +35,66 @@ pub const WEBSOCKET_CLIENT_JS: &str = r#"
     </script>
 "#;
 
-pub async fn start(output_dir: String, port: u16) -> Result<()> {
+pub async fn start(output_dir: String, port: u16, reload_tx: broadcast::Sender<()>) -> Result<()> {
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
-    let _ = tokio::net::TcpListener::bind(addr).await?;
+    let listener = std::net::TcpListener::bind(addr)?;
+    listener.set_nonblocking(true)?;
 
-    let app = Router::new().nest_service("/", ServeDir::new(output_dir));
+    let app = Router::new()
+        .route("/__livereload", get(livereload_handler))
+        .nest_service("/", ServeDir::new(output_dir))
+        .with_state(reload_tx);
 
     Logger::new().success(&format!(
         "Dev server started on -> http://localhost:{}",
         port.blue()
     ));
 
-    axum::Server::bind(&addr)
+    axum::Server::from_tcp(listener)?
         .serve(app.layer(TraceLayer::new_for_http()).into_make_service())
         .await?;
 
     Ok(())
 }
 
-pub async fn accept_connection(stream: TcpStream, clients: Clients) -> Result<()> {
-    let addr = stream
-        .peer_addr()
-        .expect("connected streams should have a peer address");
-
-    let ws_stream = accept_async(stream).await?;
-
-    let (write, _) = ws_stream.split();
-
-    clients.lock().await.insert(addr.to_string(), write);
-
-    Ok(())
+async fn livereload_handler(
+    ws: WebSocketUpgrade,
+    State(reload_tx): State<broadcast::Sender<()>>,
+) -> impl IntoResponse {
+    ws.on_upgrade(move |socket| handle_socket(socket, reload_tx.subscribe()))
 }
 
-pub async fn handle_file_changes(
+async fn handle_socket(socket: WebSocket, mut reload_rx: broadcast::Receiver<()>) {
+    let (mut sender, mut receiver) = socket.split();
+
+    loop {
+        tokio::select! {
+            reload = reload_rx.recv() => match reload {
+                Ok(()) => {
+                    if sender
+                        .send(Message::Text("RELOAD".to_string()))
+                        .await
+                        .is_err()
+                    {
+                        break;
+                    }
+                }
+                Err(broadcast::error::RecvError::Lagged(_)) => continue,
+                Err(broadcast::error::RecvError::Closed) => break,
+            },
+            incoming = receiver.next() => match incoming {
+                Some(Ok(_)) => continue,
+                // Client disconnected or errored, end this connection task
+                _ => break,
+            },
+        }
+    }
+}
+
+pub fn handle_file_changes(
     input_dir: PathBuf,
     worker: Worker,
-    clients: Clients,
+    reload_tx: broadcast::Sender<()>,
 ) -> Result<()> {
     let log = Logger::new();
 
@@ -94,13 +119,8 @@ pub async fn handle_file_changes(
                     log.error(&format!("Build failed -> {}", e.to_string().red().bold()));
                 } else {
                     log.success("Build successful, reloading...");
-                    // Send message to all clients to reload
-                    let mut clients = clients.lock().await;
-                    for (_, client) in clients.iter_mut() {
-                        client
-                            .send(tungstenite::Message::Text("RELOAD".to_string()))
-                            .await?;
-                    }
+                    // A send error only means no browser tabs are connected
+                    let _ = reload_tx.send(());
                 }
             }
         }

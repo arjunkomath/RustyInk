@@ -125,7 +125,6 @@ The `Settings.toml` file contains the settings of the website, you can customize
 ```toml
 [dev]
 port = 3000 # The port on which the dev server runs
-ws_port = 3001 # The port on which the dev server websocket runs, for hot reloading
 
 [site]
 external_links_open_in_new_tab = false # Open external markdown links in a new tab (adds target="_blank" rel="noopener noreferrer")

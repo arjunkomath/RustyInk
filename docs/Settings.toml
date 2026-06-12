@@ -1,6 +1,5 @@
 [dev]
 port = 3000
-ws_port = 3001
 
 [site]
 script_urls = []
