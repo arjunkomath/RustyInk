@@ -20,10 +20,22 @@ Here is a live [DEMO](https://techulus.xyz), my blog is built using RustyInk.
 
 ## Installation
 
-You can install RustyInk using Cargo:
+You can install RustyInk using Homebrew:
+
+```bash
+brew install arjunkomath/tap/rustyink
+```
+
+or using Cargo:
 
 ```bash
 cargo install rustyink
+```
+
+or using the shell installer:
+
+```bash
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/arjunkomath/RustyInk/releases/latest/download/rustyink-installer.sh | sh
 ```
 
 ## Usage
@@ -116,6 +128,7 @@ port = 3000 # The port on which the dev server runs
 ws_port = 3001 # The port on which the dev server websocket runs, for hot reloading
 
 [site]
+external_links_open_in_new_tab = false # Open external markdown links in a new tab (adds target="_blank" rel="noopener noreferrer")
 script_urls = [] # List of script urls to be included in the site
 style_urls = [ # List of style urls to be included in the site
   'https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css',
@@ -125,8 +138,8 @@ style_urls = [ # List of style urls to be included in the site
 [meta]
 title = "~/RustyInk" # The title of the website
 description = "Blazing fast static site generator written in Rust" # The description of the website
-og_image_url = "https://rustyink.cli.rs/images/og.png" # The og image url of the website
-base_url = "https://rustyink.cli.rs" # The base url of the website, used for building sitemap
+og_image_url = "https://rustyink.techulus.xyz/images/og.png" # The og image url of the website
+base_url = "https://rustyink.techulus.xyz" # The base url of the website, used for building sitemap
 
 [navigation] # The navigation links of the website
 links = [

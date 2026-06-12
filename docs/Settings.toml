@@ -11,8 +11,8 @@ style_urls = [
 [meta]
 title = "~/RustyInk"
 description = "Blazing fast static site generator written in Rust"
-og_image_url = "https://rustyink.cli.rs/images/og.png"
-base_url = "https://rustyink.cli.rs"
+og_image_url = "https://rustyink.techulus.xyz/images/og.png"
+base_url = "https://rustyink.techulus.xyz"
 
 [navigation]
 links = [

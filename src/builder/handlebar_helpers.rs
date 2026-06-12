@@ -38,7 +38,7 @@ impl HelperDef for SliceHelper {
                     .map(|(_, value)| value.clone())
                     .collect::<Vec<Json>>();
 
-                return Ok(ScopedJson::Derived(Json::Array(new_array)));
+                Ok(ScopedJson::Derived(Json::Array(new_array)))
             }
             Json::Object(object) => {
                 let new_object = object
@@ -48,7 +48,7 @@ impl HelperDef for SliceHelper {
                     .map(|(_, (key, value))| (key.clone(), value.clone()))
                     .collect::<serde_json::Map<String, Json>>();
 
-                return Ok(ScopedJson::Derived(Json::Object(new_object)));
+                Ok(ScopedJson::Derived(Json::Object(new_object)))
             }
             _ => Err(RenderError::new("Object/Array not found")),
         }

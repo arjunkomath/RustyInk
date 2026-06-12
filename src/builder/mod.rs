@@ -317,7 +317,7 @@ impl Worker {
                     continue;
                 }
 
-                if !current_yaml.contains_key(&serde_yaml::Value::String(path.to_string())) {
+                if !current_yaml.contains_key(serde_yaml::Value::String(path.to_string())) {
                     current_yaml.insert(
                         serde_yaml::Value::String(path.to_string()),
                         serde_yaml::Value::Mapping(serde_yaml::Mapping::new()),
@@ -325,7 +325,7 @@ impl Worker {
                 }
 
                 current_yaml =
-                    match current_yaml.get_mut(&serde_yaml::Value::String(path.to_string())) {
+                    match current_yaml.get_mut(serde_yaml::Value::String(path.to_string())) {
                         Some(serde_yaml::Value::Mapping(x)) => x,
                         _ => {
                             Logger::new()

@@ -5,6 +5,7 @@ edition = "2021"
 description = "Blazing fast static site generator"
 authors = ["Arjun Komath <arjunkomath@gmail.com>"]
 license = "MIT OR Apache-2.0"
+homepage = "https://rustyink.techulus.xyz"
 repository = "https://github.com/arjunkomath/RustyInk"
 keywords = ["static", "site", "generator"]
 
@@ -38,3 +39,8 @@ tokio-tungstenite = "0.20.1"
 toml = "0.8.1"
 tower-http = { version = "0.4.0", features = ["fs", "trace"] }
 walkdir = "2.3.3"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"

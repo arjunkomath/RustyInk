@@ -224,18 +224,42 @@ impl Render<'_> {
                 .with_context(|| format!("Failed to get markdown from captures: {}", self.file))?
                 .as_str();
 
-            let parser = pulldown_cmark::Parser::new_ext(markdown, pulldown_cmark::Options::all());
-            let mut content = String::new();
-            pulldown_cmark::html::push_html(&mut content, parser);
-
-            Ok((Some(metadata.to_string()), content))
+            Ok((Some(metadata.to_string()), self.markdown_to_html(markdown)))
         } else {
-            let parser = pulldown_cmark::Parser::new_ext(&markdown, pulldown_cmark::Options::all());
-            let mut content = String::new();
-            pulldown_cmark::html::push_html(&mut content, parser);
-
-            Ok((None, content))
+            Ok((None, self.markdown_to_html(&markdown)))
         }
+    }
+
+    fn markdown_to_html(&self, markdown: &str) -> String {
+        let parser = pulldown_cmark::Parser::new_ext(markdown, pulldown_cmark::Options::all());
+        let mut content = String::new();
+
+        if self
+            .settings
+            .get_site_settings()
+            .external_links_open_in_new_tab()
+        {
+            let events = parser.map(|event| match event {
+                pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link(_, dest, title))
+                    if dest.starts_with("http://") || dest.starts_with("https://") =>
+                {
+                    let mut anchor = String::from("<a href=\"");
+                    let _ = pulldown_cmark::escape::escape_href(&mut anchor, &dest);
+                    if !title.is_empty() {
+                        anchor.push_str("\" title=\"");
+                        let _ = pulldown_cmark::escape::escape_html(&mut anchor, &title);
+                    }
+                    anchor.push_str("\" target=\"_blank\" rel=\"noopener noreferrer\">");
+                    pulldown_cmark::Event::Html(anchor.into())
+                }
+                _ => event,
+            });
+            pulldown_cmark::html::push_html(&mut content, events);
+        } else {
+            pulldown_cmark::html::push_html(&mut content, parser);
+        }
+
+        content
     }
 
     fn render_body(

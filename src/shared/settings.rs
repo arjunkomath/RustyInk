@@ -46,6 +46,7 @@ impl Settings {
             Some(site) => site.clone(),
             None => SiteSettings {
                 block_search_indexing: Some(false),
+                external_links_open_in_new_tab: Some(false),
                 script_urls: Some(Vec::<String>::new()),
                 style_urls: Some(Vec::<String>::new()),
             },
@@ -71,6 +72,7 @@ pub struct DevSettings {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SiteSettings {
     pub block_search_indexing: Option<bool>,
+    pub external_links_open_in_new_tab: Option<bool>,
     pub script_urls: Option<Vec<String>>,
     pub style_urls: Option<Vec<String>>,
 }
@@ -78,6 +80,10 @@ pub struct SiteSettings {
 impl SiteSettings {
     pub fn is_search_engine_blocked(&self) -> bool {
         matches!(self.block_search_indexing, Some(true))
+    }
+
+    pub fn external_links_open_in_new_tab(&self) -> bool {
+        matches!(self.external_links_open_in_new_tab, Some(true))
     }
 
     pub fn get_script_urls(&self) -> Vec<String> {
