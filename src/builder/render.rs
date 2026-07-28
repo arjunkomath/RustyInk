@@ -11,8 +11,7 @@ use super::{cache, handlebar_helpers};
 use anyhow::{Context, Result};
 use handlebars::Handlebars;
 use rayon::prelude::*;
-use regex::Regex;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 pub struct Render<'a> {
     file: String,
@@ -22,7 +21,7 @@ pub struct Render<'a> {
     handlebars: Handlebars<'a>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize)]
 struct AppRenderData {
     title: String,
     description: String,
@@ -36,7 +35,7 @@ struct AppRenderData {
     remote_data: serde_json::Value,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize)]
 struct PageRenderData {
     body: String,
     root: serde_yaml::Value,
@@ -119,7 +118,7 @@ impl Render<'_> {
                     )?,
                     content,
                     styles: self.get_global_styles()?,
-                    scripts: self.get_global_scripts()?,
+                    scripts: self.get_global_scripts(),
                     links: self.settings.navigation.links.clone(),
                     page_metadata: metadata,
                     data: self.settings.data.clone(),
@@ -133,20 +132,7 @@ impl Render<'_> {
 
     pub fn get_metadata(&self) -> Result<Option<String>> {
         let markdown = fs::read_to_string(&self.file)?;
-
-        let metadata = Regex::new(r"^(?s)---(.*?)---")
-            .context("Failed to parse metadata from markdown file")?;
-
-        if let Some(captures) = metadata.captures(&markdown) {
-            let metadata = captures
-                .get(1)
-                .with_context(|| format!("Failed to get metadata from captures: {}", self.file))?
-                .as_str();
-
-            Ok(Some(metadata.to_string()))
-        } else {
-            Ok(None)
-        }
+        Ok(Self::split_frontmatter(&markdown).0.map(str::to_string))
     }
 
     fn get_template(&self, name: &str) -> Result<String> {
@@ -164,81 +150,51 @@ impl Render<'_> {
             String::new()
         };
 
-        let downloaded_styles = self
-            .settings
-            .get_site_settings()
-            .get_style_urls()
-            .par_iter()
-            .map(|url| match cache::get_file(url, self.cache.clone()) {
-                Ok(style) => style,
-                Err(e) => {
-                    Logger::new().error(&format!("Failed to download style: {}", e));
-                    String::new()
-                }
-            })
-            .collect::<Vec<String>>()
-            .join("\n");
+        let downloaded_styles = self.download_urls(&self.settings.site.style_urls, "style");
 
         let style_tag = format!("<style>{}{}</style>", downloaded_styles, styles);
 
         Ok(style_tag)
     }
 
-    fn get_global_scripts(&self) -> Result<String> {
-        let downloaded_scripts = self
-            .settings
-            .get_site_settings()
-            .get_script_urls()
-            .par_iter()
+    fn get_global_scripts(&self) -> String {
+        format!(
+            "<script type=\"text/javascript\">{}</script>",
+            self.download_urls(&self.settings.site.script_urls, "script")
+        )
+    }
+
+    fn download_urls(&self, urls: &[String], kind: &str) -> String {
+        urls.par_iter()
             .map(|url| match cache::get_file(url, self.cache.clone()) {
-                Ok(script) => script,
+                Ok(content) => content,
                 Err(e) => {
-                    Logger::new().error(&format!("Failed to download script: {}", e));
+                    Logger::error(&format!("Failed to download {kind}: {e}"));
                     String::new()
                 }
             })
             .collect::<Vec<String>>()
-            .join("\n");
-
-        let script_tag = format!(
-            "<script type=\"text/javascript\">{}</script>",
-            downloaded_scripts
-        );
-
-        Ok(script_tag)
+            .join("\n")
     }
 
     fn get_markdown_and_metadata(&self) -> Result<(Option<String>, String)> {
         let markdown = fs::read_to_string(&self.file)?;
+        let (metadata, body) = Self::split_frontmatter(&markdown);
+        Ok((metadata.map(str::to_string), self.markdown_to_html(body)))
+    }
 
-        let metadata = Regex::new(r"^(?s)---(.*?)---(.*)")
-            .context("Failed to parse metadata from markdown file")?;
-
-        if let Some(captures) = metadata.captures(&markdown) {
-            let metadata = captures
-                .get(1)
-                .with_context(|| format!("Failed to get metadata from captures: {}", self.file))?
-                .as_str();
-            let markdown = captures
-                .get(2)
-                .with_context(|| format!("Failed to get markdown from captures: {}", self.file))?
-                .as_str();
-
-            Ok((Some(metadata.to_string()), self.markdown_to_html(markdown)))
-        } else {
-            Ok((None, self.markdown_to_html(&markdown)))
-        }
+    fn split_frontmatter(markdown: &str) -> (Option<&str>, &str) {
+        markdown
+            .strip_prefix("---")
+            .and_then(|markdown| markdown.split_once("---"))
+            .map_or((None, markdown), |(metadata, body)| (Some(metadata), body))
     }
 
     fn markdown_to_html(&self, markdown: &str) -> String {
         let parser = pulldown_cmark::Parser::new_ext(markdown, pulldown_cmark::Options::all());
         let mut content = String::new();
 
-        if self
-            .settings
-            .get_site_settings()
-            .external_links_open_in_new_tab()
-        {
+        if self.settings.site.external_links_open_in_new_tab {
             let events = parser.map(|event| match event {
                 pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link(_, dest, title))
                     if dest.starts_with("http://") || dest.starts_with("https://") =>
@@ -268,25 +224,22 @@ impl Render<'_> {
         metadata: &serde_yaml::Value,
         site_directory: &serde_yaml::Value,
     ) -> Result<String> {
-        let template = if let Some(template) = metadata.get("template") {
+        if let Some(template) = metadata.get("template") {
             let template = template
                 .as_str()
                 .with_context(|| format!("Failed to get template from metadata: {}", self.file))?;
 
-            let page_render_data = if let Some(data) = self.settings.get_data_yaml()? {
-                PageRenderData {
-                    body: body.to_string(),
-                    root: site_directory.clone(),
-                    data: utils::merge_yaml_values(data, metadata.clone()),
-                    remote_data: self.get_remote_data()?,
+            let data = match &self.settings.data {
+                Some(data) => {
+                    utils::merge_yaml_values(serde_yaml::to_value(data)?, metadata.clone())
                 }
-            } else {
-                PageRenderData {
-                    body: body.to_string(),
-                    data: metadata.clone(),
-                    root: site_directory.clone(),
-                    remote_data: self.get_remote_data()?,
-                }
+                None => metadata.clone(),
+            };
+            let page_render_data = PageRenderData {
+                body: body.to_string(),
+                root: site_directory.clone(),
+                data,
+                remote_data: self.get_remote_data()?,
             };
 
             let body = self
@@ -296,9 +249,7 @@ impl Render<'_> {
             Ok(body)
         } else {
             Ok(body.to_string())
-        };
-
-        template
+        }
     }
 
     fn get_remote_data(&self) -> Result<serde_json::Value> {
@@ -318,8 +269,7 @@ impl Render<'_> {
                             result.insert(key.to_string(), value);
                         }
                         _ => {
-                            Logger::new()
-                                .error(&format!("Failed to get remote data for key: {}", url));
+                            Logger::error(&format!("Failed to get remote data for key: {}", url));
                             result.insert(key.to_string(), serde_json::Value::Null);
                         }
                     }
@@ -329,5 +279,19 @@ impl Render<'_> {
             }
             None => Ok(serde_json::Value::Null),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Render;
+
+    #[test]
+    fn splits_frontmatter() {
+        assert_eq!(
+            Render::split_frontmatter("---title: Home---# Hello"),
+            (Some("title: Home"), "# Hello")
+        );
+        assert_eq!(Render::split_frontmatter("# Hello"), (None, "# Hello"));
     }
 }

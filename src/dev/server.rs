@@ -2,13 +2,13 @@ use std::{net::SocketAddr, path::PathBuf, time::Duration};
 
 use anyhow::Result;
 use axum::{
+    Router,
     extract::{
-        ws::{Message, WebSocket, WebSocketUpgrade},
         State,
+        ws::{Message, WebSocket, WebSocketUpgrade},
     },
     response::IntoResponse,
     routing::get,
-    Router,
 };
 use futures_util::{SinkExt, StreamExt};
 use notify::RecursiveMode;
@@ -45,7 +45,7 @@ pub async fn start(output_dir: String, port: u16, reload_tx: broadcast::Sender<(
         .nest_service("/", ServeDir::new(output_dir))
         .with_state(reload_tx);
 
-    Logger::new().success(&format!(
+    Logger::success(&format!(
         "Dev server started on -> http://localhost:{}",
         port.blue()
     ));
@@ -96,9 +96,7 @@ pub fn handle_file_changes(
     worker: Worker,
     reload_tx: broadcast::Sender<()>,
 ) -> Result<()> {
-    let log = Logger::new();
-
-    log.success(&format!(
+    Logger::success(&format!(
         "Watching for changes in -> {}",
         input_dir.display().blue().bold()
     ));
@@ -111,14 +109,17 @@ pub fn handle_file_changes(
 
     for result in rx {
         match result {
-            Err(error) => log.error(&error.to_string()),
+            Err(error) => Logger::error(&error.to_string()),
             Ok(_) => {
-                log.info("\nChanges detected, rebuilding...");
+                Logger::info("\nChanges detected, rebuilding...");
 
                 if let Err(e) = worker.build() {
-                    log.error(&format!("Build failed -> {}", e.to_string().red().bold()));
+                    Logger::error(&format!(
+                        "Build failed -> {}",
+                        format!("{e:#}").red().bold()
+                    ));
                 } else {
-                    log.success("Build successful, reloading...");
+                    Logger::success("Build successful, reloading...");
                     // A send error only means no browser tabs are connected
                     let _ = reload_tx.send(());
                 }

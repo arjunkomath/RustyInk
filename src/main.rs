@@ -2,7 +2,7 @@ use std::env;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-use builder::{cache, Worker};
+use builder::{Worker, cache};
 use clap::{Parser, Subcommand};
 use directories::ProjectDirs;
 use shared::logger::Logger;
@@ -68,39 +68,38 @@ async fn main() -> Result<()> {
     let project_dirs =
         ProjectDirs::from("rs", "cli", "RustyInk").context("Failed to get project directories")?;
     let cache_dir = project_dirs.cache_dir().to_string_lossy().to_string();
-    let cache = cache::Cache::new(cache_dir)?;
-    let log = Logger::new();
+    let cache = cache::Cache::new(cache_dir);
 
     match args.command {
         Commands::New { project_dir, theme } => {
             create::project(&project_dir, &theme).await.map_err(|e| {
-                log.error(&e.to_string());
+                Logger::error(&e.to_string());
                 anyhow::anyhow!("Failed to create project: {}", e)
             })?;
 
             create::settings_file(&project_dir).map_err(|e| {
-                log.error(&e.to_string());
+                Logger::error(&e.to_string());
                 anyhow::anyhow!("Failed to create settings file: {}", e)
             })?;
 
-            log.activity(&format!("Project created in {}", project_dir.display()));
+            Logger::activity(&format!("Project created in {}", project_dir.display()));
         }
         Commands::Dev { input_dir, watch } => {
             if utils::path_to_string(&input_dir)? == utils::path_to_string(&env::current_dir()?)? {
-                log.error(
-                    "Sorry, you cannot use current directory as input directory as output is written to it!"
+                Logger::error(
+                    "Sorry, you cannot use current directory as input directory as output is written to it!",
                 );
 
                 return Ok(());
             }
 
-            let worker = Worker::dev(&input_dir, Some(cache), true)?;
+            let worker = Worker::new(&input_dir, Some(cache), true)?;
             let output_dir = worker.get_output_dir().to_string();
-            let port = worker.get_settings().dev.port;
+            let port = worker.get_settings()?.dev.port;
 
             // Trigger a build
             if let Err(e) = worker.build() {
-                log.error(&format!("Build failed -> {}", e));
+                Logger::error(&format!("Build failed -> {e:#}"));
             }
 
             let (reload_tx, _) = broadcast::channel(16);
@@ -113,7 +112,7 @@ async fn main() -> Result<()> {
                 // the server fails (e.g. port already in use)
                 std::thread::spawn(move || {
                     if let Err(e) = dev::server::handle_file_changes(input_dir, worker, reload_tx) {
-                        Logger::new().error(&format!("File watcher stopped -> {}", e));
+                        Logger::error(&format!("File watcher stopped -> {e:#}"));
                     }
                 });
             }
@@ -121,11 +120,10 @@ async fn main() -> Result<()> {
             dev::server::start(output_dir, port, reload_tx).await?;
         }
         Commands::Build { input_dir } => {
-            let worker = Worker::prod(&input_dir)?;
-
-            if let Err(e) = worker.build() {
-                log.error(&format!("Build failed -> {}", e));
-            }
+            let worker = Worker::new(&input_dir, None, false)?;
+            worker
+                .build()
+                .inspect_err(|e| Logger::error(&format!("Build failed -> {e:#}")))?;
         }
         Commands::Clean {} => {
             cache.clean().context("Failed to clean cache")?;

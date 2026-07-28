@@ -7,14 +7,10 @@ use std::{
 use crate::shared::{logger::Logger, settings::Settings, utils};
 
 use anyhow::{Context, Result};
-use async_recursion::async_recursion;
 use owo_colors::OwoColorize;
-use reqwest::{
-    header::{HeaderMap, USER_AGENT},
-    Client,
-};
+use reqwest::Client;
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize)]
 struct GitHubContent {
     name: String,
     path: String,
@@ -32,7 +28,6 @@ impl GitHubContent {
     }
 }
 
-#[async_recursion]
 async fn download_folder(
     project_dir: &str,
     theme: &str,
@@ -41,50 +36,42 @@ async fn download_folder(
     repo: &str,
     folder_path: &str,
 ) -> Result<()> {
-    let url = format!(
-        "https://api.github.com/repos/{}/{}/contents/{}",
-        owner, repo, folder_path
-    );
+    let mut folders = vec![folder_path.to_string()];
 
-    // Create a custom user agent header to avoid rate limiting
-    let mut headers = HeaderMap::new();
-    headers.insert(USER_AGENT, "RustyInk".parse()?);
+    while let Some(folder_path) = folders.pop() {
+        let response = client
+            .get(format!(
+                "https://api.github.com/repos/{owner}/{repo}/contents/{folder_path}"
+            ))
+            .send()
+            .await?
+            .json::<Vec<GitHubContent>>()
+            .await?;
 
-    // Send the API request to get the folder contents
-    let response = client
-        .get(&url)
-        .headers(headers)
-        .send()
-        .await?
-        .json::<Vec<GitHubContent>>()
-        .await?;
+        for item in response {
+            if item.is_file() {
+                let file_path = item.path.replace(theme, project_dir);
+                let folder = Path::new(&file_path)
+                    .parent()
+                    .context("Failed to get parent folder")?;
+                fs::create_dir_all(folder)?;
 
-    for item in response {
-        if item.is_file() {
-            let file_path = item.path.replace(theme, project_dir);
+                Logger::activity(&format!("\tDownloading file: {}", item.path.bold().green()));
 
-            let folder = Path::new(&file_path)
-                .parent()
-                .context("Failed to get parent folder")?;
-            fs::create_dir_all(folder)?;
-
-            Logger::new().activity(&format!("\tDownloading file: {}", item.path.bold().green()));
-
-            let download_url = format!(
-                "https://raw.githubusercontent.com/{}/{}/master/{}",
-                owner, repo, item.path
-            );
-
-            let mut file_response = client.get(download_url).send().await?;
-            let mut file = fs::File::create(file_path)?;
-            while let Some(chunk) = file_response.chunk().await? {
-                file.write_all(&chunk)?;
+                let mut response = client
+                    .get(format!(
+                        "https://raw.githubusercontent.com/{owner}/{repo}/master/{}",
+                        item.path
+                    ))
+                    .send()
+                    .await?;
+                let mut file = fs::File::create(file_path)?;
+                while let Some(chunk) = response.chunk().await? {
+                    file.write_all(&chunk)?;
+                }
+            } else if item.is_dir() {
+                folders.push(format!("{folder_path}/{}", item.name));
             }
-        } else if item.is_dir() {
-            let dir_name = item.name;
-            let subfolder_path = format!("{}/{}", folder_path, dir_name);
-
-            download_folder(project_dir, theme, client, owner, repo, &subfolder_path).await?;
         }
     }
 
@@ -92,15 +79,15 @@ async fn download_folder(
 }
 
 pub async fn project(project_dir: &PathBuf, theme: &str) -> Result<()> {
-    utils::create_dir_in_path(project_dir)?;
+    fs::create_dir_all(project_dir)?;
 
     let project_dir = utils::path_to_string(project_dir)?;
 
-    let client = Client::new();
+    let client = Client::builder().user_agent("RustyInk").build()?;
     let repo_owner = "arjunkomath";
     let repo_name = "rustyink-themes";
 
-    Logger::new().activity(&format!("Downloading theme {}", theme.bold().blue()));
+    Logger::activity(&format!("Downloading theme {}", theme.bold().blue()));
 
     download_folder(&project_dir, theme, &client, repo_owner, repo_name, theme).await?;
 
@@ -108,7 +95,7 @@ pub async fn project(project_dir: &PathBuf, theme: &str) -> Result<()> {
 }
 
 pub fn settings_file(project_dir: &PathBuf) -> Result<()> {
-    let settings = Settings::default().to_toml_string()?;
+    let settings = toml::to_string(&Settings::default())?;
     fs::write(Path::new(project_dir).join("Settings.toml"), settings)?;
 
     Ok(())

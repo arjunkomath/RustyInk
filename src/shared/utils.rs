@@ -1,15 +1,7 @@
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use serde_yaml::Value;
-
-pub fn create_dir_in_path(path: &PathBuf) -> Result<()> {
-    if fs::metadata(path).is_err() {
-        fs::create_dir(path)?;
-    }
-
-    Ok(())
-}
 
 pub fn path_to_string(path: &PathBuf) -> Result<String> {
     path.canonicalize()

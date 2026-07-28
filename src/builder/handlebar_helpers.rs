@@ -3,7 +3,7 @@ use handlebars::{
     Context, Handlebars, Helper, HelperDef, HelperResult, Output, RenderContext, RenderError,
     ScopedJson,
 };
-use serde_json::{json, value::Value as Json, Map};
+use serde_json::{Map, json, value::Value as Json};
 
 #[derive(Clone, Copy)]
 pub struct SliceHelper;

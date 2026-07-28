@@ -1,7 +1,6 @@
 use std::{fs, path::Path};
 
 use anyhow::Result;
-use md5::{Digest, Md5};
 
 #[derive(Debug, Clone)]
 pub struct Cache {
@@ -9,16 +8,17 @@ pub struct Cache {
 }
 
 impl Cache {
-    pub fn new(cache_dir: String) -> Result<Self> {
-        Ok(Cache { cache_dir })
+    pub fn new(cache_dir: String) -> Self {
+        Cache { cache_dir }
     }
 
     pub fn get_cache_file_path(&self, key: &str) -> String {
-        let mut hasher = Md5::new();
-        hasher.update(key);
-        let key = hasher.finalize();
-        let key = format!("{:x}", key);
-        format!("{}/{}.txt", self.cache_dir, key)
+        let mut hash = 0xcbf29ce484222325_u64;
+        for byte in key.bytes() {
+            hash ^= u64::from(byte);
+            hash = hash.wrapping_mul(0x100000001b3);
+        }
+        format!("{}/{hash:016x}.txt", self.cache_dir)
     }
 
     pub fn set(&self, key: &str, value: &str) -> Result<()> {
@@ -79,4 +79,17 @@ pub fn get_json(url: &str, cache: Option<Cache>) -> Result<serde_json::Value> {
     }
 
     Ok(serde_json::from_str(&content)?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Cache;
+
+    #[test]
+    fn cache_paths_are_stable() {
+        assert_eq!(
+            Cache::new("cache".to_string()).get_cache_file_path("hello"),
+            "cache/a430d84680aabd0b.txt"
+        );
+    }
 }

@@ -1,25 +1,21 @@
 use owo_colors::OwoColorize;
 
-pub struct Logger {}
+pub struct Logger;
 
 impl Logger {
-    pub fn new() -> Self {
-        Logger {}
-    }
-
-    pub fn info(&self, message: &str) {
+    pub fn info(message: &str) {
         println!("{}", message.blue());
     }
 
-    pub fn activity(&self, message: &str) {
+    pub fn activity(message: &str) {
         println!("- {}...", message.bold());
     }
 
-    pub fn success(&self, message: &str) {
+    pub fn success(message: &str) {
         println!("✔ {}", message.green());
     }
 
-    pub fn error(&self, message: &str) {
+    pub fn error(message: &str) {
         println!("- Error: {}", message.red().bold());
     }
 }

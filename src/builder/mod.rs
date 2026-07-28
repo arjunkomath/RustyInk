@@ -4,16 +4,12 @@ use crate::{
 };
 
 use anyhow::{Context, Result};
-use config::Config;
 use fs_extra::dir::CopyOptions;
 use html_minifier::HTMLMinifier;
 use owo_colors::OwoColorize;
 use rayon::prelude::*;
 use slugify::slugify;
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{fs, path::Path};
 use tokio::time::Instant;
 use walkdir::WalkDir;
 
@@ -38,14 +34,14 @@ pub struct Worker {
 }
 
 impl Worker {
-    pub fn dev(input_dir: &Path, cache: Option<cache::Cache>, is_dev: bool) -> Result<Self> {
+    pub fn new(input_dir: &Path, cache: Option<cache::Cache>, is_dev: bool) -> Result<Self> {
         let output_dir = OUTPUT_DIR;
         let pages_dir = utils::path_to_string(&input_dir.join(PAGES_DIR))?;
         let public_dir = utils::path_to_string(&input_dir.join(PUBLIC_DIR))?;
         let theme_dir = utils::path_to_string(&input_dir.join(THEME_DIR))?;
         let config_file = utils::path_to_string(&input_dir.join("Settings.toml"))?;
 
-        utils::create_dir_in_path(&PathBuf::from(output_dir))?;
+        fs::create_dir_all(output_dir)?;
 
         Ok(Self {
             output_dir: output_dir.to_string(),
@@ -58,29 +54,9 @@ impl Worker {
         })
     }
 
-    pub fn prod(input_dir: &Path) -> Result<Self> {
-        let output_dir = OUTPUT_DIR;
-        let pages_dir = utils::path_to_string(&input_dir.join(PAGES_DIR))?;
-        let public_dir = utils::path_to_string(&input_dir.join(PUBLIC_DIR))?;
-        let theme_dir = utils::path_to_string(&input_dir.join(THEME_DIR))?;
-        let config_file = utils::path_to_string(&input_dir.join("Settings.toml"))?;
-
-        utils::create_dir_in_path(&PathBuf::from(output_dir))?;
-
-        Ok(Self {
-            output_dir: output_dir.to_string(),
-            pages_dir,
-            public_dir,
-            theme_dir,
-            config_file,
-            cache: None,
-            is_dev: false,
-        })
-    }
-
     fn setup_output(&self) -> Result<()> {
         fs::remove_dir_all(&self.output_dir)?;
-        utils::create_dir_in_path(&PathBuf::from(&self.output_dir))?;
+        fs::create_dir_all(&self.output_dir)?;
 
         Ok(())
     }
@@ -103,30 +79,17 @@ impl Worker {
         &self.output_dir
     }
 
-    pub fn get_settings(&self) -> settings::Settings {
-        match Config::builder()
-            .add_source(config::File::with_name(&self.config_file))
-            .build()
-        {
-            Ok(config) => match config.try_deserialize() {
-                Ok(settings) => settings,
-                Err(e) => {
-                    Logger::new().error(&format!("{}: {}", "Failed to parse settings file, ", e));
-                    std::process::exit(1);
-                }
-            },
-            Err(e) => {
-                Logger::new().error(&format!("{}: {}", "Failed to open settings file, ", e));
-                std::process::exit(1);
-            }
-        }
+    pub fn get_settings(&self) -> Result<settings::Settings> {
+        let contents =
+            fs::read_to_string(&self.config_file).context("Failed to open settings file")?;
+        toml::from_str(&contents).context("Failed to parse settings file")
     }
 
     pub fn build(&self) -> Result<()> {
-        let log = Logger::new();
-        log.activity("Building site");
+        Logger::activity("Building site");
 
         let start_time = Instant::now();
+        let settings = self.get_settings()?;
 
         self.setup_output()?;
         self.copy_public_files()?;
@@ -142,25 +105,19 @@ impl Worker {
         let all_pages_with_metadata: Vec<(String, String)> = markdown_files
             .par_iter()
             .map(|x| {
-                let metadata = render::Render::new(
-                    x,
-                    &self.theme_dir,
-                    self.get_settings(),
-                    self.cache.clone(),
-                )
-                .get_metadata()
-                .unwrap_or(None);
+                let metadata =
+                    render::Render::new(x, &self.theme_dir, settings.clone(), self.cache.clone())
+                        .get_metadata()
+                        .unwrap_or(None);
 
                 let x = x.replace(&self.pages_dir, "").replace("page.md", "");
 
                 let x = if x.contains(".md") {
-                    let x = x
-                        .replace(".md", "")
+                    x.replace(".md", "")
                         .split('/')
                         .map(|x| slugify!(x))
                         .collect::<Vec<String>>()
-                        .join("/");
-                    x
+                        .join("/")
                 } else {
                     x
                 };
@@ -173,52 +130,53 @@ impl Worker {
         let site_directory = self.generate_site_directory(&all_pages_with_metadata)?;
 
         markdown_files.par_iter().for_each(|file| {
-            if let Err(e) = self.process_file(file, &site_directory) {
-                log.error(&format!("{}: {}", "Failed to process file, ", e));
+            if let Err(e) = self.process_file(file, &site_directory, &settings) {
+                Logger::error(&format!("{}: {}", "Failed to process file, ", e));
             }
         });
 
         // Handle robots.txt, ignore if there is a file already
-        if !Path::new(&self.output_dir).join("robots.txt").exists() {
-            if let Ok(robots_txt) = seo::generate_robots_txt(&self.get_settings()) {
-                log.success(&format!(
-                    "{} {} robots.txt",
-                    "Generated",
-                    "File       ".blue()
-                ));
-                fs::write(Path::new(&self.output_dir).join("robots.txt"), robots_txt)?;
-            }
+        if !Path::new(&self.output_dir).join("robots.txt").exists()
+            && let Ok(robots_txt) = seo::generate_robots_txt(&settings)
+        {
+            Logger::success(&format!(
+                "{} {} robots.txt",
+                "Generated",
+                "File       ".blue()
+            ));
+            fs::write(Path::new(&self.output_dir).join("robots.txt"), robots_txt)?;
         }
 
         // Handle sitemap.xml, ignore if there is a file already
-        if !Path::new(&self.output_dir).join("sitemap.xml").exists() {
-            if let Ok(sitemap_xml) =
-                seo::generate_sitemap_xml(&self.get_settings(), &all_pages_with_metadata)
-            {
-                log.success(&format!(
-                    "{} {} sitemap.xml",
-                    "Generated",
-                    "File       ".blue()
-                ));
-                fs::write(Path::new(&self.output_dir).join("sitemap.xml"), sitemap_xml)?;
-            }
+        if !Path::new(&self.output_dir).join("sitemap.xml").exists()
+            && let Ok(sitemap_xml) = seo::generate_sitemap_xml(&settings, &all_pages_with_metadata)
+        {
+            Logger::success(&format!(
+                "{} {} sitemap.xml",
+                "Generated",
+                "File       ".blue()
+            ));
+            fs::write(Path::new(&self.output_dir).join("sitemap.xml"), sitemap_xml)?;
         }
 
         let elapsed_time = start_time.elapsed();
-        log.success(&format!("Completed in: {:?}", elapsed_time));
+        Logger::success(&format!("Completed in: {:?}", elapsed_time));
 
         Ok(())
     }
 
-    fn process_file(&self, file: &str, site_directory: &serde_yaml::Value) -> Result<()> {
-        let log = Logger::new();
-
+    fn process_file(
+        &self,
+        file: &str,
+        site_directory: &serde_yaml::Value,
+        settings: &settings::Settings,
+    ) -> Result<()> {
         let html_file = file
             .replace(&self.pages_dir, &self.output_dir)
             .replace("page.md", "index.html");
 
         let html_file = if html_file.contains(".md") {
-            let html_file = html_file
+            html_file
                 .replace(".md", "/index.html")
                 .split('/')
                 .map(|x| {
@@ -229,8 +187,7 @@ impl Worker {
                     }
                 })
                 .collect::<Vec<String>>()
-                .join("/");
-            html_file
+                .join("/")
         } else {
             html_file
         };
@@ -239,20 +196,15 @@ impl Worker {
             .replace(&self.output_dir, "")
             .replace("index.html", "");
 
-        let html = render::Render::new(
-            file,
-            &self.theme_dir,
-            self.get_settings(),
-            self.cache.clone(),
-        )
-        .render_page("app", &actual_url_path, site_directory)?;
+        let html = render::Render::new(file, &self.theme_dir, settings.clone(), self.cache.clone())
+            .render_page("app", &actual_url_path, site_directory)?;
 
         let folder = Path::new(&html_file)
             .parent()
             .context("Failed to get parent folder")?;
         fs::create_dir_all(folder)?;
 
-        log.success(&format!(
+        Logger::success(&format!(
             "{} {} {}",
             "Generated",
             "Page       ".blue(),
@@ -271,20 +223,15 @@ impl Worker {
         fs::write(&html_file, html_minifier.get_html())?;
 
         // Handle AMP
-        let amp = render::Render::new(
-            file,
-            &self.theme_dir,
-            self.get_settings(),
-            self.cache.clone(),
-        )
-        .render_page("amp", &actual_url_path, site_directory)?;
+        let amp = render::Render::new(file, &self.theme_dir, settings.clone(), self.cache.clone())
+            .render_page("amp", &actual_url_path, site_directory)?;
 
         if amp.is_empty() {
             return Ok(());
         }
 
         let amp_file = html_file.replace("index.html", "amp/index.html");
-        log.success(&format!(
+        Logger::success(&format!(
             "{} {} {}",
             "Generated".green(),
             "AMP        ".blue(),
@@ -324,15 +271,15 @@ impl Worker {
                     );
                 }
 
-                current_yaml =
-                    match current_yaml.get_mut(serde_yaml::Value::String(path.to_string())) {
-                        Some(serde_yaml::Value::Mapping(x)) => x,
-                        _ => {
-                            Logger::new()
-                                .error(&format!("{}: {}", "Failed to parse yaml", "Invalid yaml",));
-                            std::process::exit(1);
-                        }
-                    };
+                current_yaml = match current_yaml
+                    .get_mut(serde_yaml::Value::String(path.to_string()))
+                {
+                    Some(serde_yaml::Value::Mapping(x)) => x,
+                    _ => {
+                        Logger::error(&format!("{}: {}", "Failed to parse yaml", "Invalid yaml",));
+                        std::process::exit(1);
+                    }
+                };
             }
 
             if let Ok(metadata) = utils::parse_string_to_yaml(metadata) {
